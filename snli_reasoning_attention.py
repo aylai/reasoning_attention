@@ -257,7 +257,7 @@ def main(num_epochs=10, k=100, batch_size=128,
                     print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
                 # do tmp save model
                 if train_batches % save_freq == 0:
-                    print('saving to ..., time used {:.3f}s'.format(time.time() - save_at))
+                    print('saving to %s, time used {:.3f}s'.format(save_filename, time.time() - save_at))
                     np.savez(save_filename,
                              *lasagne.layers.get_all_param_values(l_softmax))
                     save_at = time.time()
@@ -321,7 +321,7 @@ if __name__ == '__main__':
     attention = True
     word_by_word = True
     mode = 'word_by_word'
-    if len(sys.argv) == 2:
+    if len(sys.argv) > 2:
         mode = sys.argv[1]
         if mode == 'condition':
             attention = False
@@ -335,10 +335,13 @@ if __name__ == '__main__':
             print('doesn\'t recognize mode {}'.format(mode))
             print('only supports [condition|attention|word_by_word]')
             sys.exit(1)
+    load=False
+    if len(sys.argv) > 3 and sys.argv[2] == "load":
+        load = True
 
     main(num_epochs=20, batch_size=30,
          display_freq=1000,
-         load_previous=False,
+         load_previous=load,
          attention=attention,
          word_by_word=word_by_word,
          mode=mode)
