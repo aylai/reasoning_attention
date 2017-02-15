@@ -116,6 +116,7 @@ def main(num_epochs=10, k=100, batch_size=128,
          display_freq=100,
          save_freq=1000,
          load_previous=False,
+         load_epoch=0,
          attention=True,
          word_by_word=True, mode='word_by_word'):
     print('num_epochs: {}'.format(num_epochs))
@@ -124,6 +125,7 @@ def main(num_epochs=10, k=100, batch_size=128,
     print('display_frequency: {}'.format(display_freq))
     print('save_frequency: {}'.format(save_freq))
     print('load previous: {}'.format(load_previous))
+    print('start epoch: {}'.format(load_epoch))
     print('attention: {}'.format(attention))
     print('word_by_word: {}'.format(word_by_word))
     save_filename = './snli/{}_model.npz'.format(mode)
@@ -184,7 +186,8 @@ def main(num_epochs=10, k=100, batch_size=128,
     if load_previous:
         print('loading previous saved model ...')
         # And load them again later on like this:
-        with np.load(save_filename) as f:
+        load_filename = './snli/{}_model_epoch{}.npz'.format(mode, load_epoch)
+        with np.load(load_filename) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(l_softmax, param_values)
 
@@ -276,7 +279,7 @@ def main(num_epochs=10, k=100, batch_size=128,
 
             # Then we print the results for this epoch:
             print("Epoch {} of {} took {:.3f}s".format(
-                    epoch + 1, num_epochs, time.time() - start_time))
+                    load_epoch + epoch + 1, load_epoch + num_epochs, time.time() - start_time))
             print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
             print("  training accuracy:\t\t{:.2f} %".format(
                     train_acc / train_batches * 100))
@@ -299,7 +302,7 @@ def main(num_epochs=10, k=100, batch_size=128,
             print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
             print("  test accuracy:\t\t{:.2f} %".format(
                     test_acc / test_batches * 100))
-            filename = './snli/{}_model_epoch{}.npz'.format(mode, epoch + 1)
+            filename = './snli/{}_model_epoch{}.npz'.format(mode, load_epoch + epoch + 1)
             print('saving to {}'.format(filename))
             np.savez(filename,
                      *lasagne.layers.get_all_param_values(l_softmax))
@@ -338,10 +341,14 @@ if __name__ == '__main__':
     load=False
     if len(sys.argv) > 3 and sys.argv[2] == "load":
         load = True
+    start_epoch=0
+    if len(sys.argv) > 4:
+        start_epoch = int(sys.argv[3])
 
     main(num_epochs=20, batch_size=30,
          display_freq=1000,
          load_previous=load,
+         load_epoch=start_epoch,
          attention=attention,
          word_by_word=word_by_word,
          mode=mode)
