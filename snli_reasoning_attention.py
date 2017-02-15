@@ -260,7 +260,7 @@ def main(num_epochs=10, k=100, batch_size=128,
                     print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
                 # do tmp save model
                 if train_batches % save_freq == 0:
-                    print('saving to %s, time used {:.3f}s'.format(save_filename, time.time() - save_at))
+                    print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
                     np.savez(save_filename,
                              *lasagne.layers.get_all_param_values(l_softmax))
                     save_at = time.time()
