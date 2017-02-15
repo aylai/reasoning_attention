@@ -324,7 +324,7 @@ if __name__ == '__main__':
     attention = True
     word_by_word = True
     mode = 'word_by_word'
-    if len(sys.argv) > 2:
+    if len(sys.argv) > 1:
         mode = sys.argv[1]
         if mode == 'condition':
             attention = False
@@ -339,10 +339,10 @@ if __name__ == '__main__':
             print('only supports [condition|attention|word_by_word]')
             sys.exit(1)
     load=False
-    if len(sys.argv) > 3 and sys.argv[2] == "load":
+    if len(sys.argv) > 2 and sys.argv[2] == "load":
         load = True
     start_epoch=0
-    if len(sys.argv) > 4:
+    if len(sys.argv) > 3:
         start_epoch = int(sys.argv[3])
 
     main(num_epochs=20, batch_size=30,
