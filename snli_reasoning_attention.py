@@ -201,7 +201,7 @@ def main(params, load_model=None):
             decoder, num_units=3,
             nonlinearity=lasagne.nonlinearities.softmax)
     if load_model is not None:
-        load_filename = os.path.join(modeldir, load_model)
+        load_filename = os.path.join(modeldir, load_model + '.npz')
     # if load_previous:
         print('loading previous saved model ...')
         # And load them again later on like this:
@@ -285,7 +285,7 @@ def main(params, load_model=None):
                     # do tmp save model
                     if train_batches % save_freq == 0:
                         print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
-                        np.savez(save_filename,
+                        np.savez(save_filename + '.npz',
                                  *lasagne.layers.get_all_param_values(l_softmax))
                         save_at = time.time()
 
@@ -327,9 +327,10 @@ def main(params, load_model=None):
                 print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
                 print("  test accuracy:\t\t{:.2f} %".format(
                         test_acc / test_batches * 100))
-                filename = './snli/{}_model_epoch{}.npz'.format(mode, epoch + 1)
-                print('saving to {}'.format(filename))
-                np.savez(filename,
+                # filename = './snli/{}_model_epoch{}.npz'.format(mode, epoch + 1)
+                temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
+                print('saving to {}'.format(temp_save_filename))
+                np.savez(temp_save_filename,
                          *lasagne.layers.get_all_param_values(l_softmax))
 
             # Optionally, you could now dump the network weights to a file like this:
