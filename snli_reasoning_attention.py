@@ -5,7 +5,7 @@
 from __future__ import print_function
 
 import pickle
-import sys
+import sys, os
 
 import numpy
 import numpy as np
@@ -15,6 +15,8 @@ import theano
 import theano.tensor as T
 import lasagne
 import time
+
+import argparse
 
 from custom_layers import CustomEmbedding, CustomLSTMEncoder, CustomDense, CustomLSTMDecoder
 
@@ -112,23 +114,38 @@ hypothesis_max = 62 + 1
 
 # In[8]:
 
-def main(num_epochs=10, k=100, batch_size=128,
-         display_freq=100,
-         save_freq=1000,
-         load_previous=False,
-         load_epoch=0,
-         attention=True,
-         word_by_word=True, mode='word_by_word'):
+# def main(num_epochs=10, k=100,
+#          batch_size=128,
+#          display_freq=100,
+#          save_freq=1000,
+#          load_previous=False,
+#          load_epoch=0,
+#          attention=True,
+#          word_by_word=True,
+#          mode='word_by_word',
+#          stage='train',
+#          ):
+def main(params, load_model=None):
+    num_epochs = params['num_epochs']
     print('num_epochs: {}'.format(num_epochs))
+    k = params['lstm_dim']
     print('k: {}'.format(k))
+    batch_size = params['batch_size']
     print('batch_size: {}'.format(batch_size))
+    display_freq = params['display_freq']
     print('display_frequency: {}'.format(display_freq))
+    save_freq = 10000
     print('save_frequency: {}'.format(save_freq))
-    print('load previous: {}'.format(load_previous))
-    print('start epoch: {}'.format(load_epoch))
+    modeldir = os.path.join(params["run_dir"], params["exp_name"])
+    save_filename = os.path.join(modeldir, "save")
+    # print('load previous: {}'.format(load_previous))
+    # print('start epoch: {}'.format(load_epoch))
+    attention = params['attention']
     print('attention: {}'.format(attention))
+    word_by_word = params['word_by_word']
     print('word_by_word: {}'.format(word_by_word))
-    save_filename = './snli/{}_model.npz'.format(mode)
+    mode = params['model_type']
+    # save_filename = './snli/{}_model.npz'.format(params['model'])
     print("Building network ...")
     premise_var = T.imatrix('premise_var')
     premise_mask = T.imatrix('premise_mask')
@@ -183,10 +200,12 @@ def main(num_epochs=10, k=100, batch_size=128,
     l_softmax = lasagne.layers.DenseLayer(
             decoder, num_units=3,
             nonlinearity=lasagne.nonlinearities.softmax)
-    if load_previous:
+    if load_model is not None:
+        load_filename = os.path.join(modeldir, load_model)
+    # if load_previous:
         print('loading previous saved model ...')
         # And load them again later on like this:
-        load_filename = './snli/{}_model_epoch{}.npz'.format(mode, load_epoch)
+        # load_filename = './snli/{}_model_epoch{}.npz'.format(mode, load_epoch)
         with np.load(load_filename) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
         lasagne.layers.set_all_param_values(l_softmax, param_values)
@@ -227,95 +246,117 @@ def main(num_epochs=10, k=100, batch_size=128,
                                cost, updates=updates)
     val_fn = theano.function([premise_var, premise_mask, hypo_var, hypo_mask, target_var],
                              [test_loss, test_acc])
-    print("Training ...")
+    split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
+    train_data = split_data[params['train_split']]
+    test_data = split_data[params['test_split']]
+    dev_data = split_data[params['dev_split']]
+    if params['stage'] == 'train':
+        print("Training ...")
 
-    print('train_df.shape: {0}'.format(train_df.shape))
-    print('dev_df.shape: {0}'.format(dev_df.shape))
-    print('test_df.shape: {0}'.format(test_df.shape))
-    try:
-        # Finally, launch the training loop.
-        print("Starting training...")
-        # We iterate over epochs:
-        for epoch in range(num_epochs):
-            # In each epoch, we do a full pass over the training data:
-            shuffled_train_df = train_df.reindex(np.random.permutation(train_df.index))
-            train_err = 0
-            train_acc = 0
-            train_batches = 0
-            start_time = time.time()
-            display_at = time.time()
-            save_at = time.time()
-            for start_i in range(0, len(shuffled_train_df), batch_size):
-                batched_df = shuffled_train_df[start_i:start_i + batch_size]
-                ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                train_err += train_fn(ps, p_masks, hs, h_masks, labels)
-                err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
-                train_acc += acc
-                train_batches += 1
-                # display
-                if train_batches % display_freq == 0:
-                    print("Seen {:d} samples, time used: {:.3f}s".format(
-                        start_i + batch_size, time.time() - display_at))
-                    print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
-                    print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
-                # do tmp save model
-                if train_batches % save_freq == 0:
-                    print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
-                    np.savez(save_filename,
-                             *lasagne.layers.get_all_param_values(l_softmax))
-                    save_at = time.time()
+        print('train_df.shape: {0}'.format(train_data.shape))
+        print('dev_df.shape: {0}'.format(dev_data.shape))
+        print('test_df.shape: {0}'.format(test_data.shape))
+        try:
+            # Finally, launch the training loop.
+            print("Starting training...")
+            # We iterate over epochs:
+            for epoch in range(num_epochs):
+                # In each epoch, we do a full pass over the training data:
+                shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                train_err = 0
+                train_acc = 0
+                train_batches = 0
+                start_time = time.time()
+                display_at = time.time()
+                save_at = time.time()
+                for start_i in range(0, len(shuffled_train_df), batch_size):
+                    batched_df = shuffled_train_df[start_i:start_i + batch_size]
+                    ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                    train_err += train_fn(ps, p_masks, hs, h_masks, labels)
+                    err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+                    train_acc += acc
+                    train_batches += 1
+                    # display
+                    if train_batches % display_freq == 0:
+                        print("Seen {:d} samples, time used: {:.3f}s".format(
+                            start_i + batch_size, time.time() - display_at))
+                        print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
+                        print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
+                    # do tmp save model
+                    if train_batches % save_freq == 0:
+                        print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
+                        np.savez(save_filename,
+                                 *lasagne.layers.get_all_param_values(l_softmax))
+                        save_at = time.time()
 
-            # And a full pass over the validation data:
-            val_err = 0
-            val_acc = 0
-            val_batches = 0
-            for start_i in range(0, len(dev_df), batch_size):
-                batched_df = dev_df[start_i:start_i + batch_size]
-                ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
-                val_err += err
-                val_acc += acc
-                val_batches += 1
+                # And a full pass over the validation data:
+                val_err = 0
+                val_acc = 0
+                val_batches = 0
+                for start_i in range(0, len(dev_data), batch_size):
+                    batched_df = dev_data[start_i:start_i + batch_size]
+                    ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                    err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+                    val_err += err
+                    val_acc += acc
+                    val_batches += 1
 
-            # Then we print the results for this epoch:
-            print("Epoch {} of {} took {:.3f}s".format(
-                    load_epoch + epoch + 1, load_epoch + num_epochs, time.time() - start_time))
-            print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-            print("  training accuracy:\t\t{:.2f} %".format(
-                    train_acc / train_batches * 100))
-            print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
-            print("  validation accuracy:\t\t{:.2f} %".format(
-                    val_acc / val_batches * 100))
+                # Then we print the results for this epoch:
+                print("Epoch {} of {} took {:.3f}s".format(
+                        epoch + 1, num_epochs, time.time() - start_time))
+                print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+                print("  training accuracy:\t\t{:.2f} %".format(
+                        train_acc / train_batches * 100))
+                print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
+                print("  validation accuracy:\t\t{:.2f} %".format(
+                        val_acc / val_batches * 100))
 
-            # After training, we compute and print the test error:
-            test_err = 0
-            test_acc = 0
-            test_batches = 0
-            for start_i in range(0, len(test_df), batch_size):
-                batched_df = test_df[start_i:start_i + batch_size]
-                ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
-                test_err += err
-                test_acc += acc
-                test_batches += 1
-            # print("Final results:")
-            print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-            print("  test accuracy:\t\t{:.2f} %".format(
-                    test_acc / test_batches * 100))
-            filename = './snli/{}_model_epoch{}.npz'.format(mode, load_epoch + epoch + 1)
-            print('saving to {}'.format(filename))
-            np.savez(filename,
-                     *lasagne.layers.get_all_param_values(l_softmax))
+                # After training, we compute and print the test error:
+                # Todo delete this eval bit
+                test_err = 0
+                test_acc = 0
+                test_batches = 0
+                for start_i in range(0, len(test_df), batch_size):
+                    batched_df = test_df[start_i:start_i + batch_size]
+                    ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                    err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+                    test_err += err
+                    test_acc += acc
+                    test_batches += 1
+                # print("Final results:")
+                print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+                print("  test accuracy:\t\t{:.2f} %".format(
+                        test_acc / test_batches * 100))
+                filename = './snli/{}_model_epoch{}.npz'.format(mode, epoch + 1)
+                print('saving to {}'.format(filename))
+                np.savez(filename,
+                         *lasagne.layers.get_all_param_values(l_softmax))
 
-        # Optionally, you could now dump the network weights to a file like this:
-        # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
-        #
-        # And load them again later on like this:
-        # with np.load('model.npz') as f:
-        #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-        # lasagne.layers.set_all_param_values(network, param_values)
-    except KeyboardInterrupt:
-        print('exit ...')
+            # Optionally, you could now dump the network weights to a file like this:
+            # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
+            #
+            # And load them again later on like this:
+            # with np.load('model.npz') as f:
+            #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
+            # lasagne.layers.set_all_param_values(network, param_values)
+        except KeyboardInterrupt:
+            print('exit ...')
+    else:
+        # After training, we compute and print the test error:
+        test_err = 0
+        test_acc = 0
+        test_batches = 0
+        for start_i in range(0, len(test_df), batch_size):
+            batched_df = test_df[start_i:start_i + batch_size]
+            ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+            err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+            test_err += err
+            test_acc += acc
+            test_batches += 1
+        # print("Final results:")
+        print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+        print("  test accuracy:\t\t{:.2f} %".format(
+            test_acc / test_batches * 100))
 
 
 # In[9]:
@@ -323,37 +364,121 @@ def main(num_epochs=10, k=100, batch_size=128,
 if __name__ == '__main__':
     start = time.time()
 
-    attention = True
-    word_by_word = True
-    mode = 'word_by_word'
-    if len(sys.argv) > 1:
-        mode = sys.argv[1]
-        if mode == 'condition':
-            attention = False
-            word_by_word = False
-        elif mode == 'attention':
-            word_by_word = False
-        elif mode == 'word_by_word':
-            attention = True
-            word_by_word = True
-        else:
-            print('doesn\'t recognize mode {}'.format(mode))
-            print('only supports [condition|attention|word_by_word]')
-            sys.exit(1)
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    GIT_DIR = "/".join(dirname.split("/")[:-1])
+    RUNS_DIR = os.path.join(GIT_DIR, "runs")
+    DATA_DIR = os.path.join(GIT_DIR, "data")
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--train", action="store_true", help="active this flag to train the model")
+    parser.add_argument("--test", action="store_true", help="active this flag to test the model")
+    parser.add_argument("--train_split", type=str, default="train", help="data split to train model")
+    parser.add_argument("--dev_split", type=str, default="dev", help="data split for dev evaluation")
+    parser.add_argument("--test_split", type=str, default="test", help="data split to evaluate")
+    parser.add_argument("--saved_model", help="name of saved model")
+    parser.add_argument("--data_dir", default="snli", help="path to the SNLI dataset directory")
+    # parser.add_argument("--vector_type", default="glove", help="specify vector type glove/word2vec/none")
+    parser.add_argument("--model_name", type=str)
+    parser.add_argument("--model_type", type=str, default="attention")
+
+    # parser.add_argument("--data_type", type=str, default="snli", help="snli or mpe")
+
+    # parser.add_argument("--learning_rate", type=float, default=0.001)
+    # parser.add_argument("--dropout", type=float, default=0.8)
+    # parser.add_argument("--l2_reg", type=float, default=0)
+    parser.add_argument("--batch_size", type=int, default=32)
+    parser.add_argument("--num_epochs", type=int, default=10)
+    # parser.add_argument("--embedding_dim", type=int, default=300, help="vector dimension")
+    parser.add_argument("--lstm_dim", type=int, default=100, help="LSTM output dimension (k in the original paper)")
+    args = parser.parse_args()
+
+    if args.model_name is None:
+        print("Specify name of experiment")
+        sys.exit(0)
+
+    params = {
+        'run_dir': RUNS_DIR,
+        'exp_name': args.model_name,
+        'load_model_file': args.saved_model,
+        'data_dir': os.path.join(DATA_DIR, args.data_dir),
+
+        'train_split': args.train_split,
+        'dev_split': args.dev_split,
+        'test_split': args.test_split,
+
+        'model_type': args.model_type,
+        # 'glove_file': args.glove_path,
+        # 'w2v_file': args.word2vec_path,
+        # 'vector_src': args.vector_type,
+
+        # 'data_type': args.data_type,
+        # 'premise_selection': args.premise_selection,
+
+        # 'embedding_dim': args.embedding_dim,  # word embedding dim
+        # 'oov_op': args.oov_operation,  # save, load, none
+        # 'oov_file': args.model_name + '.vector',
+
+        'batch_size': args.batch_size,
+        'lstm_dim': args.lstm_dim,
+        # 'dropout': args.dropout,  # 1 = no dropout, 0.5 = dropout
+        # 'multicell': args.multicell,
+
+        # 'learning_rate': args.learning_rate,
+        # 'l2_reg': args.l2_reg,
+
+        'num_epochs': args.num_epochs,
+        # 'num_classes': args.num_classes,
+    }
+
+    if args.train:
+        params['stage'] = 'train'
+    elif args.test:
+        params['stage'] = 'test'
+    else:
+        print("Choose to train or test model.")
+        sys.exit(0)
+
+    # method
+    params['attention'] = True
+    params['word_by_word'] = True
+    if params['model_type'] == 'condition':
+        params['attention'] = False
+        params['word_by_word'] = False
+    elif params['model_type'] == 'attention':
+        params['word_by_word'] = False
+    elif params['model_type'] == 'word_by_word':
+        params['attention'] = True
+        params['word_by_word'] = True
+    else:
+        print('doesn\'t recognize mode {}'.format(params['model_type']))
+        print('only supports [condition|attention|word_by_word]')
+        sys.exit(1)
+
+    if not os.path.exists(params['run_dir']):
+        os.mkdir(params['run_dir'])
+    modeldir = os.path.join(params['run_dir'], params["exp_name"])
+    if not os.path.exists(modeldir):
+        os.mkdir(modeldir)
+
     load=False
     if len(sys.argv) > 2 and sys.argv[2] == "load":
         load = True
     start_epoch=0
     if len(sys.argv) > 3:
         start_epoch = int(sys.argv[3])
+    params['display_freq'] = 1000
 
-    main(num_epochs=20, batch_size=30,
-         display_freq=1000,
-         load_previous=load,
-         load_epoch=start_epoch,
-         attention=attention,
-         word_by_word=word_by_word,
-         mode=mode)
+    if params['stage'] == 'train':
+        main(params)
+    elif params['stage'] == 'test':
+        main(params, load_model=params['load_model_file'])
+        # num_epochs=args.num_epochs, batch_size=args.batch_size,
+        #  display_freq=1000,
+        #  attention=attention,
+        #  word_by_word=word_by_word,
+        #  mode=mode,
+        #  stage=stage,
+        #  load_filename=args.saved_model)
 
     end = time.time() - start
     m, s = divmod(end, 60)
