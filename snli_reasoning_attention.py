@@ -27,6 +27,7 @@ def prepare(df):
     seqs_premise = []
     seqs_hypothesis = []
     for cc in df['sentence1']:
+        print("cc %s" % cc)
         seqs_premise.append(cc)
     for cc in df['sentence2']:
         seqs_hypothesis.append(cc)
