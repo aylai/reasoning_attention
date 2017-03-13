@@ -365,9 +365,9 @@ if __name__ == '__main__':
     start = time.time()
 
     dirname, filename = os.path.split(os.path.abspath(__file__))
-    GIT_DIR = "/".join(dirname.split("/")[:-1])
-    RUNS_DIR = os.path.join(GIT_DIR, "runs")
-    DATA_DIR = os.path.join(GIT_DIR, "data")
+    # GIT_DIR = "/".join(dirname.split("/")[:-1])
+    RUNS_DIR = os.path.join(dirname, "runs")
+    DATA_DIR = os.path.join(dirname, "data")
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true", help="active this flag to train the model")
