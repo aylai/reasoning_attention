@@ -460,12 +460,12 @@ if __name__ == '__main__':
     if not os.path.exists(modeldir):
         os.mkdir(modeldir)
 
-    load=False
-    if len(sys.argv) > 2 and sys.argv[2] == "load":
-        load = True
-    start_epoch=0
-    if len(sys.argv) > 3:
-        start_epoch = int(sys.argv[3])
+    # load=False
+    # if len(sys.argv) > 2 and sys.argv[2] == "load":
+    #     load = True
+    # start_epoch=0
+    # if len(sys.argv) > 3:
+    #     start_epoch = int(sys.argv[3])
     params['display_freq'] = 1000
 
     if params['stage'] == 'train':
