@@ -321,6 +321,8 @@ def main(num_epochs=10, k=100, batch_size=128,
 # In[9]:
 
 if __name__ == '__main__':
+    start = time.time()
+
     attention = True
     word_by_word = True
     mode = 'word_by_word'
@@ -353,3 +355,7 @@ if __name__ == '__main__':
          word_by_word=word_by_word,
          mode=mode)
 
+    end = time.time() - start
+    m, s = divmod(end, 60)
+    h, m = divmod(m, 60)
+    print("%d:%02d:%02d" % (h, m, s))
