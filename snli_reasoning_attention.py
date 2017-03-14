@@ -73,39 +73,49 @@ def prepare(df):
 
 # In[3]:
 
-print('Loading data ...')
-train_df, dev_df, test_df = (None, None, None)
-with open('./snli/converted_train.pkl', 'rb') as f:
-    print('Loading train ...')
-    train_df = pickle.load(f)
-    print(len(train_df))
-    filtered_s2 = train_df.sentence2.apply(lambda s2: len(s2) != 0)
-    train_df = train_df[filtered_s2]
-    print(len(train_df))
-    train_df = train_df[train_df.gold_label != '-']
-    train_df = train_df.reset_index()
-    print(len(train_df))
-    # prepare(train_df)
-with open('./snli/converted_dev.pkl', 'rb') as f:
-    print('Loading dev ...')
-    dev_df = pickle.load(f)
-    print(len(dev_df))
-    filtered_s2 = dev_df.sentence2.apply(lambda s2: len(s2) != 0)
-    dev_df = dev_df[filtered_s2]
-    print(len(dev_df))
-    dev_df = dev_df[dev_df.gold_label != '-']
-    dev_df = dev_df.reset_index()
-    print(len(dev_df))
-with open('./snli/converted_test.pkl', 'rb') as f:
-    print('Loading test ...')
-    test_df = pickle.load(f)
-    print(len(test_df))
-    filtered_s2 = test_df.sentence2.apply(lambda s2: len(s2) != 0)
-    test_df = test_df[filtered_s2]
-    print(len(test_df))
-    test_df = test_df[test_df.gold_label != '-']
-    test_df = test_df.reset_index()
-    print(len(test_df))
+def load_data(params):
+    print('Loading data ...')
+    train_df, dev_df, test_df = (None, None, None)
+    # with open('./snli/converted_train.pkl', 'rb') as f:
+    splits = {'train': 0, 'test': 0, 'dev': 0}
+    splits[params['train_split']] += 1
+    splits[params['test_split']] += 1
+    splits[params['dev_split']] += 1
+    if splits['train'] > 0:
+        with open(params['data_dir'] + '/converted_train.pkl', 'rb') as f:
+            print('Loading train ...')
+            train_df = pickle.load(f)
+            print(len(train_df))
+            filtered_s2 = train_df.sentence2.apply(lambda s2: len(s2) != 0)
+            train_df = train_df[filtered_s2]
+            print(len(train_df))
+            train_df = train_df[train_df.gold_label != '-']
+            train_df = train_df.reset_index()
+            print(len(train_df))
+            # prepare(train_df)
+    if splits['dev'] > 0:
+        with open(params['data_dir'] + '/converted_dev.pkl', 'rb') as f:
+            print('Loading dev ...')
+            dev_df = pickle.load(f)
+            print(len(dev_df))
+            filtered_s2 = dev_df.sentence2.apply(lambda s2: len(s2) != 0)
+            dev_df = dev_df[filtered_s2]
+            print(len(dev_df))
+            dev_df = dev_df[dev_df.gold_label != '-']
+            dev_df = dev_df.reset_index()
+            print(len(dev_df))
+    if splits['test'] > 0:
+        with open(params['data_dir'] + '/converted_test.pkl', 'rb') as f:
+            print('Loading test ...')
+            test_df = pickle.load(f)
+            print(len(test_df))
+            filtered_s2 = test_df.sentence2.apply(lambda s2: len(s2) != 0)
+            test_df = test_df[filtered_s2]
+            print(len(test_df))
+            test_df = test_df[test_df.gold_label != '-']
+            test_df = test_df.reset_index()
+            print(len(test_df))
+    return train_df, dev_df, test_df
 
 # In[7]:
 
@@ -147,15 +157,17 @@ def main(params, load_model=None):
     print('word_by_word: {}'.format(word_by_word))
     mode = params['model_type']
     # save_filename = './snli/{}_model.npz'.format(params['model'])
+    print("Loading data ...")
+    train_df, dev_df, test_df = load_data(params)
     print("Building network ...")
     premise_var = T.imatrix('premise_var')
     premise_mask = T.imatrix('premise_mask')
     hypo_var = T.imatrix('hypo_var')
     hypo_mask = T.imatrix('hypo_mask')
-    unchanged_W = pickle.load(open('./snli/unchanged_W.pkl', 'rb'))
+    unchanged_W = pickle.load(open(params['data_dir'] + '/unchanged_W.pkl', 'rb'))
     unchanged_W = unchanged_W.astype('float32')
     unchanged_W_shape = unchanged_W.shape
-    oov_in_train_W = pickle.load(open('./snli/oov_in_train_W.pkl', 'rb'))
+    oov_in_train_W = pickle.load(open(params['data_dir'] + '/oov_in_train_W.pkl', 'rb'))
     oov_in_train_W = oov_in_train_W.astype('float32')
     oov_in_train_W_shape = oov_in_train_W.shape
     print('unchanged_W.shape: {0}'.format(unchanged_W_shape))
