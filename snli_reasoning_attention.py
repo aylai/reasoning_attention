@@ -85,6 +85,8 @@ def load_data(params):
         with open(params['data_dir'] + '/converted_train.pkl', 'rb') as f:
             print('Loading train ...')
             train_df = pickle.load(f)
+            if params['data_dir'] != 'snli':
+                train_df = pd.DataFrame(data=train_df)
             print(len(train_df))
             filtered_s2 = train_df.sentence2.apply(lambda s2: len(s2) != 0)
             train_df = train_df[filtered_s2]
@@ -97,6 +99,8 @@ def load_data(params):
         with open(params['data_dir'] + '/converted_dev.pkl', 'rb') as f:
             print('Loading dev ...')
             dev_df = pickle.load(f)
+            if params['data_dir'] != 'snli':
+                dev_df = pd.DataFrame(data=dev_df)
             print(len(dev_df))
             filtered_s2 = dev_df.sentence2.apply(lambda s2: len(s2) != 0)
             dev_df = dev_df[filtered_s2]
@@ -108,6 +112,8 @@ def load_data(params):
         with open(params['data_dir'] + '/converted_test.pkl', 'rb') as f:
             print('Loading test ...')
             test_df = pickle.load(f)
+            if params['data_dir'] != 'snli':
+                test_df = pd.DataFrame(data=test_df)
             print(len(test_df))
             filtered_s2 = test_df.sentence2.apply(lambda s2: len(s2) != 0)
             test_df = test_df[filtered_s2]
@@ -157,7 +163,6 @@ def main(params, load_model=None):
     print('word_by_word: {}'.format(word_by_word))
     mode = params['model_type']
     # save_filename = './snli/{}_model.npz'.format(params['model'])
-    print("Loading data ...")
     train_df, dev_df, test_df = load_data(params)
     print("Building network ...")
     premise_var = T.imatrix('premise_var')
