@@ -127,29 +127,22 @@ def precision_recall(predicted, labels):
     # if self.data_type == "snli" or self.data_type == "mpe_concat" or self.data_type == "mpe_indiv":
     correct = 0
     total_pred = 0
-    # label_map = {0: "neutral", 1: "entailment", 2: "contradiction"}
-    # true_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
-    # false_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
-    # false_neg = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
-    true_pos = {0: 0, 1: 0, 2: 0}
-    false_pos = {0: 0, 1: 0, 2: 0}
-    false_neg = {0: 0, 1: 0, 2: 0}
+    true_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    false_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    false_neg = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    label_map = {0: "neutral", 1: "contradiction", 2: "entailment"}
     for idx, pred_label_id in enumerate(predicted):
         total_pred += 1
         true_label_id = labels[idx]
         if pred_label_id == true_label_id:
-            true_pos[pred_label_id] += 1
+            true_pos[label_map[pred_label_id]] += 1
         else:
-            false_pos[pred_label_id] += 1
-            false_neg[true_label_id] += 1
-    # precision = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
-    # recall = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
-
-    precision = {0: 0, 1: 0, 2: 0}
-    recall = {0: 0, 1: 0, 2: 0}
-    # for label in ['entailment', 'neutral', 'contradiction']:
-    for label in [0,1,2]:
-        print(label, ":", str(true_pos[label] + false_neg[label]))
+            false_pos[label_map[pred_label_id]] += 1
+            false_neg[label_map[true_label_id]] += 1
+    precision = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    recall = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    for label in ['entailment', 'neutral', 'contradiction']:
+        # print(label, ":", str(true_pos[label] + false_neg[label]))
         prec_sum = 1.0 * (true_pos[label] + false_pos[label])
         if prec_sum > 0:
             precision[label] = true_pos[label] / prec_sum
