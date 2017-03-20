@@ -144,10 +144,12 @@ def precision_recall(predicted, labels):
             false_neg[true_label_id] += 1
     # precision = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
     # recall = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+
     precision = {0: 0, 1: 0, 2: 0}
     recall = {0: 0, 1: 0, 2: 0}
     # for label in ['entailment', 'neutral', 'contradiction']:
     for label in [0,1,2]:
+        print(label, ":", str(true_pos[label] + false_neg[label]))
         prec_sum = 1.0 * (true_pos[label] + false_pos[label])
         if prec_sum > 0:
             precision[label] = true_pos[label] / prec_sum
@@ -158,7 +160,8 @@ def precision_recall(predicted, labels):
             recall[label] = true_pos[label] / recall_sum
         else:
             recall[label] = 0.0
-    return precision, recall
+    result = {"precision": precision, "recall": recall}
+    return result
 # In[7]:
 
 premise_max = 82 + 1
