@@ -354,7 +354,7 @@ def main(params, load_model=None):
                     ps, p_masks, hs, h_masks, labels = prepare(batched_df)
                     err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
                     predictions.extend(T.argmax(pred, axis=1).eval().tolist())
-                    targets.extend(target.eval().tolist())
+                    targets.extend(target.tolist())
                     val_err += err
                     val_acc += acc
                     val_batches += 1
@@ -395,7 +395,7 @@ def main(params, load_model=None):
             ps, p_masks, hs, h_masks, labels = prepare(batched_df)
             err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
             predictions.extend(T.argmax(pred, axis=1).eval().tolist())
-            targets.extend(target.eval().tolist())
+            targets.extend(target.tolist())
             # print(.eval())
             # print(target)
             # print(T.eq(T.argmax(pred, axis=1), target).eval())
