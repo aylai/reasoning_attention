@@ -350,8 +350,10 @@ def main(params, load_model=None):
             batched_df = test_df[start_i:start_i + batch_size]
             ps, p_masks, hs, h_masks, labels = prepare(batched_df)
             err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
-            print(pred)
+            print(T.argmax(pred, axis=1))
             print(target)
+            print(T.eq(T.argmax(pred, axis=1), target))
+            print("***")
             test_err += err
             test_acc += acc
             test_batches += 1
