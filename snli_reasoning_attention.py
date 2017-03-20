@@ -122,6 +122,43 @@ def load_data(params):
             print(len(test_df))
     return train_df, dev_df, test_df
 
+
+def precision_recall(predicted, labels):
+    # if self.data_type == "snli" or self.data_type == "mpe_concat" or self.data_type == "mpe_indiv":
+    correct = 0
+    total_pred = 0
+    # label_map = {0: "neutral", 1: "entailment", 2: "contradiction"}
+    # true_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    # false_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    # false_neg = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    true_pos = {0: 0, 1: 0, 2: 0}
+    false_pos = {0: 0, 1: 0, 2: 0}
+    false_neg = {0: 0, 1: 0, 2: 0}
+    for idx, pred_label_id in enumerate(predicted):
+        total_pred += 1
+        true_label_id = labels[idx]
+        if pred_label_id == true_label_id:
+            true_pos[pred_label_id] += 1
+        else:
+            false_pos[pred_label_id] += 1
+            false_neg[true_label_id] += 1
+    # precision = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    # recall = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    precision = {0: 0, 1: 0, 2: 0}
+    recall = {0: 0, 1: 0, 2: 0}
+    # for label in ['entailment', 'neutral', 'contradiction']:
+    for label in [0,1,2]:
+        prec_sum = 1.0 * (true_pos[label] + false_pos[label])
+        if prec_sum > 0:
+            precision[label] = true_pos[label] / prec_sum
+        else:
+            precision[label] = 0.0
+        recall_sum = 1.0 * (true_pos[label] + false_neg[label])
+        if recall_sum > 0:
+            recall[label] = true_pos[label] / recall_sum
+        else:
+            recall[label] = 0.0
+    return precision, recall
 # In[7]:
 
 premise_max = 82 + 1
@@ -310,10 +347,14 @@ def main(params, load_model=None):
                 val_err = 0
                 val_acc = 0
                 val_batches = 0
+                predictions = []
+                targets = []
                 for start_i in range(0, len(dev_data), batch_size):
                     batched_df = dev_data[start_i:start_i + batch_size]
                     ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                    err, acc, _, _ = val_fn(ps, p_masks, hs, h_masks, labels)
+                    err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
+                    predictions.extend(pred)
+                    targets.extend(target)
                     val_err += err
                     val_acc += acc
                     val_batches += 1
@@ -327,6 +368,7 @@ def main(params, load_model=None):
                 print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
                 print("  validation accuracy:\t\t{:.2f} %".format(
                         val_acc / val_batches * 100))
+                print(precision_recall(predictions, targets))
                 temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
                 print('saving to {}'.format(temp_save_filename))
                 np.savez(temp_save_filename,
@@ -346,21 +388,26 @@ def main(params, load_model=None):
         test_err = 0
         test_acc = 0
         test_batches = 0
+        predictions = []
+        targets = []
         for start_i in range(0, len(test_df), batch_size):
             batched_df = test_df[start_i:start_i + batch_size]
             ps, p_masks, hs, h_masks, labels = prepare(batched_df)
             err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
-            print(T.argmax(pred, axis=1).eval())
-            print(target)
-            print(T.eq(T.argmax(pred, axis=1), target).eval())
-            print("***")
+            predictions.extend(T.argmax(pred, axis=1))
+            targets.extend(target)
+            # print(.eval())
+            # print(target)
+            # print(T.eq(T.argmax(pred, axis=1), target).eval())
+            # print("***")
             test_err += err
             test_acc += acc
             test_batches += 1
-        # print("Final results:")
-        # print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-        # print("  test accuracy:\t\t{:.2f} %".format(
-        #     test_acc / test_batches * 100))
+        print("Final results:")
+        print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+        print("  test accuracy:\t\t{:.2f} %".format(
+            test_acc / test_batches * 100))
+        print(precision_recall(predictions, targets))
 
 
 # In[9]:
