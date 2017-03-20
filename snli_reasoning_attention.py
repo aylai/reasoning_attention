@@ -263,7 +263,7 @@ def main(params, load_model=None):
     train_fn = theano.function([premise_var, premise_mask, hypo_var, hypo_mask, target_var],
                                cost, updates=updates)
     val_fn = theano.function([premise_var, premise_mask, hypo_var, hypo_mask, target_var],
-                             [test_loss, test_acc])
+                             [test_loss, test_acc, test_prediction, target_var])
     split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
     train_data = split_data[params['train_split']]
     test_data = split_data[params['test_split']]
@@ -291,7 +291,7 @@ def main(params, load_model=None):
                     batched_df = shuffled_train_df[start_i:start_i + batch_size]
                     ps, p_masks, hs, h_masks, labels = prepare(batched_df)
                     train_err += train_fn(ps, p_masks, hs, h_masks, labels)
-                    err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+                    err, acc, _, _ = val_fn(ps, p_masks, hs, h_masks, labels)
                     train_acc += acc
                     train_batches += 1
                     # display
@@ -314,7 +314,7 @@ def main(params, load_model=None):
                 for start_i in range(0, len(dev_data), batch_size):
                     batched_df = dev_data[start_i:start_i + batch_size]
                     ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                    err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+                    err, acc, _, _ = val_fn(ps, p_masks, hs, h_masks, labels)
                     val_err += err
                     val_acc += acc
                     val_batches += 1
@@ -328,24 +328,6 @@ def main(params, load_model=None):
                 print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
                 print("  validation accuracy:\t\t{:.2f} %".format(
                         val_acc / val_batches * 100))
-
-                # After training, we compute and print the test error:
-                # Todo delete this eval bit
-                test_err = 0
-                test_acc = 0
-                test_batches = 0
-                for start_i in range(0, len(test_df), batch_size):
-                    batched_df = test_df[start_i:start_i + batch_size]
-                    ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                    err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
-                    test_err += err
-                    test_acc += acc
-                    test_batches += 1
-                # print("Final results:")
-                print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-                print("  test accuracy:\t\t{:.2f} %".format(
-                        test_acc / test_batches * 100))
-                # filename = './snli/{}_model_epoch{}.npz'.format(mode, epoch + 1)
                 temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
                 print('saving to {}'.format(temp_save_filename))
                 np.savez(temp_save_filename,
@@ -368,7 +350,9 @@ def main(params, load_model=None):
         for start_i in range(0, len(test_df), batch_size):
             batched_df = test_df[start_i:start_i + batch_size]
             ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-            err, acc = val_fn(ps, p_masks, hs, h_masks, labels)
+            err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
+            print(pred)
+            print(target)
             test_err += err
             test_acc += acc
             test_batches += 1
