@@ -123,6 +123,16 @@ def load_data(params):
     return train_df, dev_df, test_df
 
 
+# assumes dev numbering 1-1000
+def correct_ids(predicted, labels):
+    correct = []
+    for idx, pred_label_id in enumerate(predicted):
+        true_label_id = labels[idx]
+        if pred_label_id == true_label_id:
+            correct.append(idx+1) # numbering starts from 1
+    return correct
+
+
 def precision_recall(predicted, labels):
     # if self.data_type == "snli" or self.data_type == "mpe_concat" or self.data_type == "mpe_indiv":
     correct = 0
@@ -300,6 +310,8 @@ def main(params, load_model=None):
     train_data = split_data[params['train_split']]
     test_data = split_data[params['test_split']]
     dev_data = split_data[params['dev_split']]
+    out_file = open(save_filename + "_training.txt","w")
+    start = time.time()
     if params['stage'] == 'train':
         print("Training ...")
 
@@ -330,8 +342,12 @@ def main(params, load_model=None):
                     if train_batches % display_freq == 0:
                         print("Seen {:d} samples, time used: {:.3f}s".format(
                             start_i + batch_size, time.time() - display_at))
+                        out_file.write("Seen {:d} samples, time used: {:.3f}s\n".format(
+                            start_i + batch_size, time.time() - display_at))
                         print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
+                        out_file.write("  current training loss:\t\t{:.6f}\n".format(train_err / train_batches))
                         print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
+                        out_file.write("  current training accuracy:\t\t{:.6f}\n".format(train_acc / train_batches))
                     # do tmp save model
                     if train_batches % save_freq == 0:
                         print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
@@ -358,17 +374,43 @@ def main(params, load_model=None):
                 # Then we print the results for this epoch:
                 print("Epoch {} of {} took {:.3f}s".format(
                         epoch + 1, num_epochs, time.time() - start_time))
+                out_file.write("Epoch {} of {} took {:.3f}s\n".format(
+                    epoch + 1, num_epochs, time.time() - start_time))
                 print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+                out_file.write("  training loss:\t\t{:.6f}\n".format(train_err / train_batches))
                 print("  training accuracy:\t\t{:.2f} %".format(
                         train_acc / train_batches * 100))
+                out_file.write("  training accuracy:\t\t{:.2f} %\n".format(
+                    train_acc / train_batches * 100))
                 print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
+                out_file.write("  validation loss:\t\t{:.6f}\n".format(val_err / val_batches))
                 print("  validation accuracy:\t\t{:.2f} %".format(
                         val_acc / val_batches * 100))
-                print(precision_recall(predictions, targets))
+                out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
+                    val_acc / val_batches * 100))
+                print()
+                pr = precision_recall(predictions, targets)
+                print(pr)
+                for score_type in pr:
+                    out_file.write(score_type + ":\n")
+                    for label in pr[score_type]:
+                        out_file.write("\t" + label + ": " + str(pr[score_type][label]) + "\n")
+                    out_file.write("\n")
+                corr_ids = correct_ids(predictions, targets)
+                print(corr_ids)
+                out_file.write("***\n")
+                for id in corr_ids:
+                    out_file.write(str(id) + " ")
+                out_file.write("\n***\n")
                 temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
                 print('saving to {}'.format(temp_save_filename))
                 np.savez(temp_save_filename,
                          *lasagne.layers.get_all_param_values(l_softmax))
+                end = time.time() - start
+                m, s = divmod(end, 60)
+                h, m = divmod(m, 60)
+                print("%d:%02d:%02d" % (h, m, s))
+                out_file.write("%d:%02d:%02d\n\n" % (h, m, s))
 
             # Optionally, you could now dump the network weights to a file like this:
             # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
@@ -377,6 +419,7 @@ def main(params, load_model=None):
             # with np.load('model.npz') as f:
             #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
             # lasagne.layers.set_all_param_values(network, param_values)
+            out_file.close()
         except KeyboardInterrupt:
             print('exit ...')
     else:
