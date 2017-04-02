@@ -550,7 +550,7 @@ if __name__ == '__main__':
 
     if args.pretrain:
         params['pretrain'] = True
-        params['pretrain_data_dir'] = os.path.join(DATA_DIR, args.pretrain_data_dir),
+        params['pretrain_data_dir'] = os.path.join(DATA_DIR, args.pretrain_data_dir)
 
     if args.train:
         params['stage'] = 'train'
