@@ -190,8 +190,8 @@ hypothesis_max = 62 + 1
 #          ):
 def main(params, load_model=None):
 
-    pretrain_num_epochs = params['pretrain_num_epochs']
-    print('num_epochs: {}'.format(pretrain_num_epochs))
+    num_pretrain_epochs = params['num_pretrain_epochs']
+    print('num_epochs: {}'.format(num_pretrain_epochs))
     num_epochs = params['num_epochs']
     print('num_epochs: {}'.format(num_epochs))
     k = params['lstm_dim']
@@ -329,7 +329,7 @@ def main(params, load_model=None):
             if s == 'pretrain':
                 split_data = {'train': train_df_pretrain, 'test': test_df_pretrain, 'dev': dev_df_pretrain}
                 print("Pretraining...")
-                n_epochs = pretrain_num_epochs
+                n_epochs = num_pretrain_epochs
             else:
                 split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
                 print("Training ...")
