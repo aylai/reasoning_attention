@@ -215,7 +215,7 @@ def main(params, load_model=None):
     # save_filename = './snli/{}_model.npz'.format(params['model'])
     # train_df, dev_df, test_df = load_data(params)
     if params['pretrain']:
-        train_df_pretrain = load_data(params, pretrain=True, type="snli")
+        train_df_pretrain, _, _ = load_data(params, pretrain=True, type="snli")
         train_df, dev_df, test_df = load_data(params, pretrain=True, type="mpe")
     else:
         train_df, dev_df, test_df = load_data(params)
