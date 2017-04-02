@@ -334,7 +334,7 @@ def main(params, load_model=None):
     out_file = open(save_filename + "_training.txt","w")
     start = time.time()
     if params['stage'] == 'train':
-        stages = 'train'
+        stages = ['train']
         if params['pretrain']:
             stages = ['pretrain', 'train']
         print("stages", stages)
