@@ -189,6 +189,9 @@ hypothesis_max = 62 + 1
 #          stage='train',
 #          ):
 def main(params, load_model=None):
+
+    pretrain_num_epochs = params['pretrain_num_epochs']
+    print('num_epochs: {}'.format(pretrain_num_epochs))
     num_epochs = params['num_epochs']
     print('num_epochs: {}'.format(num_epochs))
     k = params['lstm_dim']
@@ -326,9 +329,11 @@ def main(params, load_model=None):
             if s == 'pretrain':
                 split_data = {'train': train_df_pretrain, 'test': test_df_pretrain, 'dev': dev_df_pretrain}
                 print("Pretraining...")
+                n_epochs = pretrain_num_epochs
             else:
                 split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
                 print("Training ...")
+                n_epochs = num_epochs
             train_data = split_data[params['train_split']]
             test_data = split_data[params['test_split']]
             dev_data = split_data[params['dev_split']]
@@ -340,7 +345,7 @@ def main(params, load_model=None):
                 # Finally, launch the training loop.
                 print("Starting training...")
                 # We iterate over epochs:
-                for epoch in range(num_epochs):
+                for epoch in range(n_epochs):
                     # In each epoch, we do a full pass over the training data:
                     shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
                     train_err = 0
