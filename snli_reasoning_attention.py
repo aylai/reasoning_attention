@@ -72,7 +72,7 @@ def prepare(df):
 
 # In[3]:
 
-def load_data(params, pretrain=False):
+def load_data(params, pretrain=False, type=None):
     print('Loading data ...')
     train_df, dev_df, test_df = (None, None, None)
     # with open('./snli/converted_train.pkl', 'rb') as f:
@@ -82,10 +82,12 @@ def load_data(params, pretrain=False):
     splits[params['dev_split']] += 1
     if pretrain:
         dir = params['pretrain_data_dir']
+        append = "_" + type
     else:
         dir = params['data_dir']
+        append = ''
     if splits['train'] > 0:
-        with open(dir + '/converted_train.pkl', 'rb') as f:
+        with open(dir + '/converted_train'+append+'.pkl', 'rb') as f:
             print('Loading train ...')
             train_df = pickle.load(f)
             if dir != 'snli':
@@ -98,8 +100,8 @@ def load_data(params, pretrain=False):
             train_df = train_df.reset_index()
             print(len(train_df))
             # prepare(train_df)
-    if splits['dev'] > 0:
-        with open(dir + '/converted_dev.pkl', 'rb') as f:
+    if splits['dev'] > 0 and type != "snli":
+        with open(dir + '/converted_dev'+append+'.pkl', 'rb') as f:
             print('Loading dev ...')
             dev_df = pickle.load(f)
             if dir != 'snli':
@@ -111,8 +113,8 @@ def load_data(params, pretrain=False):
             dev_df = dev_df[dev_df.gold_label != '-']
             dev_df = dev_df.reset_index()
             print(len(dev_df))
-    if splits['test'] > 0:
-        with open(dir + '/converted_test.pkl', 'rb') as f:
+    if splits['test'] > 0 and type != "snli":
+        with open(dir + '/converted_test'+append+'.pkl', 'rb') as f:
             print('Loading test ...')
             test_df = pickle.load(f)
             if dir != 'snli':
@@ -212,14 +214,25 @@ def main(params, load_model=None):
     print('word_by_word: {}'.format(word_by_word))
     mode = params['model_type']
     # save_filename = './snli/{}_model.npz'.format(params['model'])
-    train_df, dev_df, test_df = load_data(params)
+    # train_df, dev_df, test_df = load_data(params)
     if params['pretrain']:
-        train_df_pretrain, dev_df_pretrain, test_df_pretrain = load_data(params, pretrain=True)
+        train_df_pretrain = load_data(params, pretrain=True, type="snli")
+        train_df, dev_df, test_df = load_data(params, pretrain=True, type="mpe")
+    else:
+        train_df, dev_df, test_df = load_data(params)
     print("Building network ...")
     premise_var = T.imatrix('premise_var')
     premise_mask = T.imatrix('premise_mask')
     hypo_var = T.imatrix('hypo_var')
     hypo_mask = T.imatrix('hypo_mask')
+    # if params['pretrain']:
+    #     unchanged_W = pickle.load(open(params['joint_data_dir'] + '/unchanged_W.pkl', 'rb'))
+    #     unchanged_W = unchanged_W.astype('float32')
+    #     unchanged_W_shape = unchanged_W.shape
+    #     oov_in_train_W = pickle.load(open(params['joint_data_dir'] + '/oov_in_train_W.pkl', 'rb'))
+    #     oov_in_train_W = oov_in_train_W.astype('float32')
+    #     oov_in_train_W_shape = oov_in_train_W.shape
+    # else:
     unchanged_W = pickle.load(open(params['data_dir'] + '/unchanged_W.pkl', 'rb'))
     unchanged_W = unchanged_W.astype('float32')
     unchanged_W_shape = unchanged_W.shape
@@ -327,20 +340,23 @@ def main(params, load_model=None):
             stages = ['pretrain', 'train']
         for s in stages:
             if s == 'pretrain':
-                split_data = {'train': train_df_pretrain, 'test': test_df_pretrain, 'dev': dev_df_pretrain}
+                split_data = {'train': train_df_pretrain, 'dev': dev_df}
                 print("Pretraining...")
                 n_epochs = num_pretrain_epochs
+                train_data = split_data[params['train_split']]
+                dev_data = split_data[params['dev_split']]
+                print('train_df.shape: {0}'.format(train_data.shape))
+                print('dev_df.shape: {0}'.format(dev_data.shape))
             else:
                 split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
                 print("Training ...")
                 n_epochs = num_epochs
-            train_data = split_data[params['train_split']]
-            test_data = split_data[params['test_split']]
-            dev_data = split_data[params['dev_split']]
-
-            print('train_df.shape: {0}'.format(train_data.shape))
-            print('dev_df.shape: {0}'.format(dev_data.shape))
-            print('test_df.shape: {0}'.format(test_data.shape))
+                train_data = split_data[params['train_split']]
+                test_data = split_data[params['test_split']]
+                dev_data = split_data[params['dev_split']]
+                print('train_df.shape: {0}'.format(train_data.shape))
+                print('dev_df.shape: {0}'.format(dev_data.shape))
+                print('test_df.shape: {0}'.format(test_data.shape))
             try:
                 # Finally, launch the training loop.
                 print("Starting training...")
@@ -492,7 +508,7 @@ if __name__ == '__main__':
     parser.add_argument("--test_split", type=str, default="test", help="data split to evaluate")
     parser.add_argument("--saved_model", help="name of saved model")
     parser.add_argument("--data_dir", type=str, default="snli", help="path to the SNLI dataset directory")
-    parser.add_argument("--pretrain_data_dir", type=str)
+    # parser.add_argument("--pretrain_data_dir", type=str)
     # parser.add_argument("--vector_type", default="glove", help="specify vector type glove/word2vec/none")
     parser.add_argument("--model_name", type=str)
     parser.add_argument("--model_type", type=str, default="attention")
@@ -550,7 +566,7 @@ if __name__ == '__main__':
 
     if args.pretrain:
         params['pretrain'] = True
-        params['pretrain_data_dir'] = os.path.join(DATA_DIR, args.pretrain_data_dir)
+        # params['pretrain_data_dir'] = os.path.join(DATA_DIR, args.pretrain_data_dir)
 
     if args.train:
         params['stage'] = 'train'
