@@ -80,11 +80,10 @@ def load_data(params, pretrain=False, type=None):
     splits[params['train_split']] += 1
     splits[params['test_split']] += 1
     splits[params['dev_split']] += 1
+    dir = params['data_dir']
     if pretrain:
-        dir = params['pretrain_data_dir']
         append = "_" + type
     else:
-        dir = params['data_dir']
         append = ''
     if splits['train'] > 0:
         with open(dir + '/converted_train'+append+'.pkl', 'rb') as f:
