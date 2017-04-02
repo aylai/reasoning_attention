@@ -72,7 +72,7 @@ def prepare(df):
 
 # In[3]:
 
-def load_data(params):
+def load_data(params, pretrain=False):
     print('Loading data ...')
     train_df, dev_df, test_df = (None, None, None)
     # with open('./snli/converted_train.pkl', 'rb') as f:
@@ -80,11 +80,15 @@ def load_data(params):
     splits[params['train_split']] += 1
     splits[params['test_split']] += 1
     splits[params['dev_split']] += 1
+    if pretrain:
+        dir = params['pretrain_data_dir']
+    else:
+        dir = params['data_dir']
     if splits['train'] > 0:
-        with open(params['data_dir'] + '/converted_train.pkl', 'rb') as f:
+        with open(dir + '/converted_train.pkl', 'rb') as f:
             print('Loading train ...')
             train_df = pickle.load(f)
-            if params['data_dir'] != 'snli':
+            if dir != 'snli':
                 train_df = pd.DataFrame(data=train_df)
             print(len(train_df))
             filtered_s2 = train_df.sentence2.apply(lambda s2: len(s2) != 0)
@@ -95,10 +99,10 @@ def load_data(params):
             print(len(train_df))
             # prepare(train_df)
     if splits['dev'] > 0:
-        with open(params['data_dir'] + '/converted_dev.pkl', 'rb') as f:
+        with open(dir + '/converted_dev.pkl', 'rb') as f:
             print('Loading dev ...')
             dev_df = pickle.load(f)
-            if params['data_dir'] != 'snli':
+            if dir != 'snli':
                 dev_df = pd.DataFrame(data=dev_df)
             print(len(dev_df))
             filtered_s2 = dev_df.sentence2.apply(lambda s2: len(s2) != 0)
@@ -108,10 +112,10 @@ def load_data(params):
             dev_df = dev_df.reset_index()
             print(len(dev_df))
     if splits['test'] > 0:
-        with open(params['data_dir'] + '/converted_test.pkl', 'rb') as f:
+        with open(dir + '/converted_test.pkl', 'rb') as f:
             print('Loading test ...')
             test_df = pickle.load(f)
-            if params['data_dir'] != 'snli':
+            if dir != 'snli':
                 test_df = pd.DataFrame(data=test_df)
             print(len(test_df))
             filtered_s2 = test_df.sentence2.apply(lambda s2: len(s2) != 0)
@@ -206,6 +210,8 @@ def main(params, load_model=None):
     mode = params['model_type']
     # save_filename = './snli/{}_model.npz'.format(params['model'])
     train_df, dev_df, test_df = load_data(params)
+    if params['pretrain']:
+        train_df_pretrain, dev_df_pretrain, test_df_pretrain = load_data(params, pretrain=True)
     print("Building network ...")
     premise_var = T.imatrix('premise_var')
     premise_mask = T.imatrix('premise_mask')
@@ -313,104 +319,116 @@ def main(params, load_model=None):
     out_file = open(save_filename + "_training.txt","w")
     start = time.time()
     if params['stage'] == 'train':
-        print("Training ...")
+        stages = 'train'
+        if params['pretrain']:
+            stages = ['pretrain', 'train']
+        for s in stages:
+            if s == 'pretrain':
+                split_data = {'train': train_df_pretrain, 'test': test_df_pretrain, 'dev': dev_df_pretrain}
+                print("Pretraining...")
+            else:
+                split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
+                print("Training ...")
+            train_data = split_data[params['train_split']]
+            test_data = split_data[params['test_split']]
+            dev_data = split_data[params['dev_split']]
 
-        print('train_df.shape: {0}'.format(train_data.shape))
-        print('dev_df.shape: {0}'.format(dev_data.shape))
-        print('test_df.shape: {0}'.format(test_data.shape))
-        try:
-            # Finally, launch the training loop.
-            print("Starting training...")
-            # We iterate over epochs:
-            for epoch in range(num_epochs):
-                # In each epoch, we do a full pass over the training data:
-                shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
-                train_err = 0
-                train_acc = 0
-                train_batches = 0
-                start_time = time.time()
-                display_at = time.time()
-                save_at = time.time()
-                for start_i in range(0, len(shuffled_train_df), batch_size):
-                    batched_df = shuffled_train_df[start_i:start_i + batch_size]
-                    ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                    train_err += train_fn(ps, p_masks, hs, h_masks, labels)
-                    err, acc, _, _ = val_fn(ps, p_masks, hs, h_masks, labels)
-                    train_acc += acc
-                    train_batches += 1
-                    # display
-                    if train_batches % display_freq == 0:
-                        print("Seen {:d} samples, time used: {:.3f}s".format(
-                            start_i + batch_size, time.time() - display_at))
-                        out_file.write("Seen {:d} samples, time used: {:.3f}s\n".format(
-                            start_i + batch_size, time.time() - display_at))
-                        print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
-                        out_file.write("  current training loss:\t\t{:.6f}\n".format(train_err / train_batches))
-                        print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
-                        out_file.write("  current training accuracy:\t\t{:.6f}\n".format(train_acc / train_batches))
-                    # do tmp save model
-                    if train_batches % save_freq == 0:
-                        print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
-                        np.savez(save_filename + '.npz',
-                                 *lasagne.layers.get_all_param_values(l_softmax))
-                        save_at = time.time()
+            print('train_df.shape: {0}'.format(train_data.shape))
+            print('dev_df.shape: {0}'.format(dev_data.shape))
+            print('test_df.shape: {0}'.format(test_data.shape))
+            try:
+                # Finally, launch the training loop.
+                print("Starting training...")
+                # We iterate over epochs:
+                for epoch in range(num_epochs):
+                    # In each epoch, we do a full pass over the training data:
+                    shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    train_err = 0
+                    train_acc = 0
+                    train_batches = 0
+                    start_time = time.time()
+                    display_at = time.time()
+                    save_at = time.time()
+                    for start_i in range(0, len(shuffled_train_df), batch_size):
+                        batched_df = shuffled_train_df[start_i:start_i + batch_size]
+                        ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                        train_err += train_fn(ps, p_masks, hs, h_masks, labels)
+                        err, acc, _, _ = val_fn(ps, p_masks, hs, h_masks, labels)
+                        train_acc += acc
+                        train_batches += 1
+                        # display
+                        if train_batches % display_freq == 0:
+                            print("Seen {:d} samples, time used: {:.3f}s".format(
+                                start_i + batch_size, time.time() - display_at))
+                            out_file.write("Seen {:d} samples, time used: {:.3f}s\n".format(
+                                start_i + batch_size, time.time() - display_at))
+                            print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
+                            out_file.write("  current training loss:\t\t{:.6f}\n".format(train_err / train_batches))
+                            print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
+                            out_file.write("  current training accuracy:\t\t{:.6f}\n".format(train_acc / train_batches))
+                        # do tmp save model
+                        if train_batches % save_freq == 0:
+                            print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
+                            np.savez(save_filename + '.npz',
+                                     *lasagne.layers.get_all_param_values(l_softmax))
+                            save_at = time.time()
 
-                # And a full pass over the validation data:
-                val_err = 0
-                val_acc = 0
-                val_batches = 0
-                predictions = []
-                targets = []
-                for start_i in range(0, len(dev_data), batch_size):
-                    batched_df = dev_data[start_i:start_i + batch_size]
-                    ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                    err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
-                    predictions.extend(T.argmax(pred, axis=1).eval().tolist())
-                    targets.extend(target.tolist())
-                    val_err += err
-                    val_acc += acc
-                    val_batches += 1
+                    # And a full pass over the validation data:
+                    val_err = 0
+                    val_acc = 0
+                    val_batches = 0
+                    predictions = []
+                    targets = []
+                    for start_i in range(0, len(dev_data), batch_size):
+                        batched_df = dev_data[start_i:start_i + batch_size]
+                        ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                        err, acc, pred, target = val_fn(ps, p_masks, hs, h_masks, labels)
+                        predictions.extend(T.argmax(pred, axis=1).eval().tolist())
+                        targets.extend(target.tolist())
+                        val_err += err
+                        val_acc += acc
+                        val_batches += 1
 
-                # Then we print the results for this epoch:
-                print("Epoch {} of {} took {:.3f}s".format(
+                    # Then we print the results for this epoch:
+                    print("Epoch {} of {} took {:.3f}s".format(
+                            epoch + 1, num_epochs, time.time() - start_time))
+                    out_file.write("Epoch {} of {} took {:.3f}s\n".format(
                         epoch + 1, num_epochs, time.time() - start_time))
-                out_file.write("Epoch {} of {} took {:.3f}s\n".format(
-                    epoch + 1, num_epochs, time.time() - start_time))
-                print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-                out_file.write("  training loss:\t\t{:.6f}\n".format(train_err / train_batches))
-                print("  training accuracy:\t\t{:.2f} %".format(
+                    print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+                    out_file.write("  training loss:\t\t{:.6f}\n".format(train_err / train_batches))
+                    print("  training accuracy:\t\t{:.2f} %".format(
+                            train_acc / train_batches * 100))
+                    out_file.write("  training accuracy:\t\t{:.2f} %\n".format(
                         train_acc / train_batches * 100))
-                out_file.write("  training accuracy:\t\t{:.2f} %\n".format(
-                    train_acc / train_batches * 100))
-                print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
-                out_file.write("  validation loss:\t\t{:.6f}\n".format(val_err / val_batches))
-                print("  validation accuracy:\t\t{:.2f} %".format(
+                    print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
+                    out_file.write("  validation loss:\t\t{:.6f}\n".format(val_err / val_batches))
+                    print("  validation accuracy:\t\t{:.2f} %".format(
+                            val_acc / val_batches * 100))
+                    out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
                         val_acc / val_batches * 100))
-                out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
-                    val_acc / val_batches * 100))
-                print()
-                pr = precision_recall(predictions, targets)
-                print(pr)
-                for score_type in pr:
-                    out_file.write(score_type + ":\n")
-                    for label in pr[score_type]:
-                        out_file.write("\t" + label + ": " + str(pr[score_type][label]) + "\n")
-                    out_file.write("\n")
-                corr_ids = correct_ids(predictions, targets)
-                print(corr_ids)
-                out_file.write("***\n")
-                for id in corr_ids:
-                    out_file.write(str(id) + " ")
-                out_file.write("\n***\n")
-                temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
-                print('saving to {}'.format(temp_save_filename))
-                np.savez(temp_save_filename,
-                         *lasagne.layers.get_all_param_values(l_softmax))
-                end = time.time() - start
-                m, s = divmod(end, 60)
-                h, m = divmod(m, 60)
-                print("%d:%02d:%02d" % (h, m, s))
-                out_file.write("%d:%02d:%02d\n\n" % (h, m, s))
+                    print()
+                    pr = precision_recall(predictions, targets)
+                    print(pr)
+                    for score_type in pr:
+                        out_file.write(score_type + ":\n")
+                        for label in pr[score_type]:
+                            out_file.write("\t" + label + ": " + str(pr[score_type][label]) + "\n")
+                        out_file.write("\n")
+                    corr_ids = correct_ids(predictions, targets)
+                    print(corr_ids)
+                    out_file.write("***\n")
+                    for id in corr_ids:
+                        out_file.write(str(id) + " ")
+                    out_file.write("\n***\n")
+                    temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
+                    print('saving to {}'.format(temp_save_filename))
+                    np.savez(temp_save_filename,
+                             *lasagne.layers.get_all_param_values(l_softmax))
+                    end = time.time() - start
+                    m, s = divmod(end, 60)
+                    h, m = divmod(m, 60)
+                    print("%d:%02d:%02d" % (h, m, s))
+                    out_file.write("%d:%02d:%02d\n\n" % (h, m, s))
 
             # Optionally, you could now dump the network weights to a file like this:
             # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
@@ -419,9 +437,10 @@ def main(params, load_model=None):
             # with np.load('model.npz') as f:
             #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
             # lasagne.layers.set_all_param_values(network, param_values)
-            out_file.close()
-        except KeyboardInterrupt:
-            print('exit ...')
+            except KeyboardInterrupt:
+                out_file.close()
+                print('exit ...')
+        out_file.close()
     else:
         # After training, we compute and print the test error:
         test_err = 0
@@ -462,11 +481,13 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true", help="active this flag to train the model")
     parser.add_argument("--test", action="store_true", help="active this flag to test the model")
+    parser.add_argument("--pretrain", action="store_true")
     parser.add_argument("--train_split", type=str, default="train", help="data split to train model")
     parser.add_argument("--dev_split", type=str, default="dev", help="data split for dev evaluation")
     parser.add_argument("--test_split", type=str, default="test", help="data split to evaluate")
     parser.add_argument("--saved_model", help="name of saved model")
-    parser.add_argument("--data_dir", default="snli", help="path to the SNLI dataset directory")
+    parser.add_argument("--data_dir", type=str, default="snli", help="path to the SNLI dataset directory")
+    parser.add_argument("--pretrain_data_dir", type=str)
     # parser.add_argument("--vector_type", default="glove", help="specify vector type glove/word2vec/none")
     parser.add_argument("--model_name", type=str)
     parser.add_argument("--model_type", type=str, default="attention")
@@ -478,6 +499,7 @@ if __name__ == '__main__':
     # parser.add_argument("--l2_reg", type=float, default=0)
     parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--num_epochs", type=int, default=10)
+    parser.add_argument("--num_pretrain_epochs", type=int, default=10)
     # parser.add_argument("--embedding_dim", type=int, default=300, help="vector dimension")
     parser.add_argument("--lstm_dim", type=int, default=100, help="LSTM output dimension (k in the original paper)")
     args = parser.parse_args()
@@ -517,8 +539,13 @@ if __name__ == '__main__':
         # 'l2_reg': args.l2_reg,
 
         'num_epochs': args.num_epochs,
+        'num_pretrain_epochs': args.num_pretrain_epochs,
         # 'num_classes': args.num_classes,
     }
+
+    if args.pretrain:
+        params['pretrain'] = True
+        params['pretrain_data_dir'] = os.path.join(DATA_DIR, args.pretrain_data_dir),
 
     if args.train:
         params['stage'] = 'train'
