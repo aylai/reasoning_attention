@@ -328,16 +328,18 @@ def main(params, load_model=None):
     val_fn = theano.function([premise_var, premise_mask, hypo_var, hypo_mask, target_var],
                              [test_loss, test_acc, test_prediction, target_var])
     split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
-    train_data = split_data[params['train_split']]
-    test_data = split_data[params['test_split']]
-    dev_data = split_data[params['dev_split']]
+    # train_data = split_data[params['train_split']]
+    # test_data = split_data[params['test_split']]
+    # dev_data = split_data[params['dev_split']]
     out_file = open(save_filename + "_training.txt","w")
     start = time.time()
     if params['stage'] == 'train':
         stages = 'train'
         if params['pretrain']:
             stages = ['pretrain', 'train']
+        print("stages", stages)
         for s in stages:
+            print("s",s)
             if s == 'pretrain':
                 split_data = {'train': train_df_pretrain, 'dev': dev_df}
                 print("Pretraining...")
