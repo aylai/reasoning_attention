@@ -155,7 +155,7 @@ def prepare_mpe(df):
 
 # In[3]:
 
-def load_data(params, pretrain=False, type=None):
+def load_data(params, type=None):
     print('Loading data ...')
     train_df, dev_df, test_df = (None, None, None)
     # with open('./snli/converted_train.pkl', 'rb') as f:
@@ -164,7 +164,7 @@ def load_data(params, pretrain=False, type=None):
     splits[params['test_split']] += 1
     splits[params['dev_split']] += 1
     dir = params['data_dir']
-    if pretrain:
+    if type is not None:
         append = "_" + type
     else:
         append = ''
@@ -280,9 +280,9 @@ def main(params, load_model=None):
     word_by_word = params['word_by_word']
     print('word_by_word: {}'.format(word_by_word))
     mode = params['model_type']
-    if params['pretrain']:
-        train_df_pretrain, _, _ = load_data(params, pretrain=True, type="snli")
-        train_df, dev_df, test_df = load_data(params, pretrain=True, type="mpe")
+    if params['use_snli'] is not None:
+        train_df_snli, _, _ = load_data(params, type="snli")
+        train_df, dev_df, test_df = load_data(params, type="mpe")
     else:
         train_df, dev_df, test_df = load_data(params)
     print("Building network ...")
@@ -418,17 +418,17 @@ def main(params, load_model=None):
         decoder2 = lasagne.layers.DropoutLayer(decoder2, p)
         decoder3 = lasagne.layers.DropoutLayer(decoder3, p)
         decoder4 = lasagne.layers.DropoutLayer(decoder4, p)
-    #l_softmax = lasagne.layers.DenseLayer(
-    #        decoder, num_units=3,
-    #        nonlinearity=lasagne.nonlinearities.softmax)
+    l_softmax_snli = lasagne.layers.DenseLayer(
+           decoder1, num_units=3,
+           nonlinearity=lasagne.nonlinearities.softmax)
     l_logits1 = lasagne.layers.DenseLayer(decoder1, num_units=3)
     l_logits2 = lasagne.layers.DenseLayer(decoder2, num_units=3)
     l_logits3 = lasagne.layers.DenseLayer(decoder3, num_units=3)
     l_logits4 = lasagne.layers.DenseLayer(decoder4, num_units=3)
     l_logits = lasagne.layers.ElemwiseSumLayer([l_logits1, l_logits2, l_logits3, l_logits4])
     l_softmax = lasagne.layers.NonlinearityLayer(l_logits, nonlinearity=lasagne.nonlinearities.softmax)
-    # l_softmax = lasagne.nonlinearities.softmax(l_logits)
     if load_model is not None:
+        print("I DON'T KNOW HOW TO LOAD SAVED MODEL....")
         load_filename = os.path.join(modeldir, load_model + '.npz')
     # if load_previous:
         print('loading previous saved model ...')
@@ -442,9 +442,12 @@ def main(params, load_model=None):
 
     # lasagne.layers.get_output produces a variable for the output of the net
     prediction = lasagne.layers.get_output(l_softmax, deterministic=False)
+    prediction_snli = lasagne.layers.get_output(l_softmax_snli, deterministic=False)
     # The network output will have shape (n_batch, 3);
     loss = lasagne.objectives.categorical_crossentropy(prediction, target_var)
+    loss_snli = lasagne.objectives.categorical_crossentropy(prediction_snli, target_var)
     cost = loss.mean()
+    cost_snli = loss_snli.mean()
     # if l2_weight > 0.:
     #     # apply l2 regularization
     #     print('apply l2 penalty to all layers, weight: {}'.format(l2_weight))
@@ -455,9 +458,11 @@ def main(params, load_model=None):
     #     cost += l2_penalty
     # Retrieve all parameters from the network
     all_params = lasagne.layers.get_all_params(l_softmax, trainable=True)
+    all_params_snli = lasagne.layers.get_all_params(l_softmax_snli, trainable=True)
     # Compute adam updates for training
     print("Computing updates ...")
     updates = lasagne.updates.adam(cost, all_params, learning_rate=learning_rate)
+    updates_snli = lasagne.updates.adam(cost_snli, all_params_snli, learning_rate=learning_rate)
 
     test_prediction = lasagne.layers.get_output(l_softmax, deterministic=True)
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
@@ -476,6 +481,10 @@ def main(params, load_model=None):
     val_fn = theano.function([premise_var1, premise_mask1, premise_var2, premise_mask2, premise_var3, premise_mask3,
                               premise_var4, premise_mask4, hypo_var, hypo_mask, target_var],
                              [test_loss, test_acc, test_prediction, target_var])
+    train_fn_snli = theano.function([premise_var1, premise_mask1, hypo_var, hypo_mask, target_var],
+                               cost, updates=updates)
+    val_fn_snli = theano.function([premise_var1, premise_mask1, hypo_var, hypo_mask, target_var],
+                             [test_loss, test_acc, test_prediction, target_var])
     split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
     # train_data = split_data[params['train_split']]
     # test_data = split_data[params['test_split']]
@@ -484,34 +493,101 @@ def main(params, load_model=None):
     start = time.time()
     if params['stage'] == 'train':
         stages = ['train']
-        if params['pretrain']:
-            stages = ['pretrain', 'train']
-        print("stages", stages)
-        for s in stages:
-            print("s",s)
-            if s == 'pretrain':
-                split_data = {'train': train_df_pretrain, 'dev': dev_df}
-                print("Pretraining...")
-                n_epochs = num_pretrain_epochs
-                train_data = split_data[params['train_split']]
-                dev_data = split_data[params['dev_split']]
-                print('train_df.shape: {0}'.format(train_data.shape))
-                print('dev_df.shape: {0}'.format(dev_data.shape))
-            else:
-                split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
-                print("Training ...")
-                n_epochs = num_epochs
-                train_data = split_data[params['train_split']]
-                test_data = split_data[params['test_split']]
-                dev_data = split_data[params['dev_split']]
-                print('train_df.shape: {0}'.format(train_data.shape))
-                print('dev_df.shape: {0}'.format(dev_data.shape))
-                print('test_df.shape: {0}'.format(test_data.shape))
-            try:
-                # Finally, launch the training loop.
-                print("Starting training...")
-                # We iterate over epochs:
-                for epoch in range(n_epochs):
+        epoch_data = []
+        if params['use_snli'] is None:
+            for i in range(num_epochs):
+                epoch_data.append("mpe")
+        else:
+            if params['use_snli'] == "pretrain":
+                for i in range(num_pretrain_epochs):
+                    epoch_data.append("snli")
+                for i in range(num_epochs):
+                    epoch_data.append("mpe")
+            elif params['use_snli'] == "snli_only":
+                for i in range(num_epochs):
+                    epoch_data.append("snli")
+            elif params['use_snli'] == "joint":
+                for i in range(num_epochs):
+                    epoch_data.append("mpe")
+                    epoch_data.append("snli")
+        # if params['pretrain']:
+        #     stages = ['pretrain', 'train']
+        # print("stages", stages)
+        # for s in stages:
+        #     print("s",s)
+
+        if params['use_snli'] is not None:
+            print('train_df_snli.shape: {0}'.format(train_df_snli.shape))
+        print('train_df.shape: {0}'.format(train_df.shape))
+        print('dev_df.shape: {0}'.format(dev_df.shape))
+        print('test_df.shape: {0}'.format(test_df.shape))
+        try:
+            # Finally, launch the training loop.
+            print("Starting training...")
+            # We iterate over epochs:
+            for epoch, data_src in enumerate(epoch_data):
+                print(epoch, data_src)
+                if data_src == 'snli':
+                    split_data = {'train': train_df_snli, 'dev': dev_df}
+                    print("Pretraining...")
+                    # n_epochs = num_pretrain_epochs
+                    train_data = split_data[params['train_split']]
+                    dev_data = split_data[params['dev_split']]
+                    # In each epoch, we do a full pass over the training data:
+                    shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    train_err = 0
+                    train_acc = 0
+                    train_batches = 0
+                    start_time = time.time()
+                    display_at = time.time()
+                    save_at = time.time()
+                    for start_i in range(0, len(shuffled_train_df), batch_size):
+                        batched_df = shuffled_train_df[start_i:start_i + batch_size]
+                        ps1, p_masks1, hs, h_masks, labels = prepare_snli(batched_df)
+                        train_err += train_fn_snli(ps1, p_masks1, hs, h_masks, labels)
+                        err, acc, _, _ = val_fn_snli(ps1, p_masks1, hs, h_masks, labels)
+                        train_acc += acc
+                        train_batches += 1
+                        # display
+                        if train_batches % display_freq == 0:
+                            print("Seen {:d} samples, time used: {:.3f}s".format(
+                                start_i + batch_size, time.time() - display_at))
+                            out_file.write("Seen {:d} samples, time used: {:.3f}s\n".format(
+                                start_i + batch_size, time.time() - display_at))
+                            print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
+                            out_file.write("  current training loss:\t\t{:.6f}\n".format(train_err / train_batches))
+                            print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
+                            out_file.write("  current training accuracy:\t\t{:.6f}\n".format(train_acc / train_batches))
+                        # do tmp save model
+                        if train_batches % save_freq == 0:
+                            print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
+                            np.savez(save_filename + '.npz',
+                                     *lasagne.layers.get_all_param_values(l_softmax))
+                            save_at = time.time()
+
+                    # And a full pass over the validation data:
+                    val_err = 0
+                    val_acc = 0
+                    val_batches = 0
+                    predictions = []
+                    targets = []
+                    for start_i in range(0, len(dev_data), batch_size):
+                        batched_df = dev_data[start_i:start_i + batch_size]
+                        # ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                        ps1, p_masks1,  hs, h_masks, labels = prepare_snli(batched_df)
+                        err, acc, pred, target = val_fn(ps1, p_masks1, hs, h_masks, labels)
+                        predictions.extend(T.argmax(pred, axis=1).eval().tolist())
+                        targets.extend(target.tolist())
+                        val_err += err
+                        val_acc += acc
+                        val_batches += 1
+                else:
+                    split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
+                    print("Training ...")
+                    # n_epochs = num_epochs
+                    train_data = split_data[params['train_split']]
+                    test_data = split_data[params['test_split']]
+                    dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
                     shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
                     train_err = 0
@@ -562,46 +638,46 @@ def main(params, load_model=None):
                         val_acc += acc
                         val_batches += 1
 
-                    # Then we print the results for this epoch:
-                    print("Epoch {} of {} took {:.3f}s".format(
-                            epoch + 1, num_epochs, time.time() - start_time))
-                    out_file.write("Epoch {} of {} took {:.3f}s\n".format(
+                # Then we print the results for this epoch:
+                print("Epoch {} of {} took {:.3f}s".format(
                         epoch + 1, num_epochs, time.time() - start_time))
-                    print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
-                    out_file.write("  training loss:\t\t{:.6f}\n".format(train_err / train_batches))
-                    print("  training accuracy:\t\t{:.2f} %".format(
-                            train_acc / train_batches * 100))
-                    out_file.write("  training accuracy:\t\t{:.2f} %\n".format(
+                out_file.write("Epoch {} of {} took {:.3f}s\n".format(
+                    epoch + 1, num_epochs, time.time() - start_time))
+                print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
+                out_file.write("  training loss:\t\t{:.6f}\n".format(train_err / train_batches))
+                print("  training accuracy:\t\t{:.2f} %".format(
                         train_acc / train_batches * 100))
-                    print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
-                    out_file.write("  validation loss:\t\t{:.6f}\n".format(val_err / val_batches))
-                    print("  validation accuracy:\t\t{:.2f} %".format(
-                            val_acc / val_batches * 100))
-                    out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
+                out_file.write("  training accuracy:\t\t{:.2f} %\n".format(
+                    train_acc / train_batches * 100))
+                print("  validation loss:\t\t{:.6f}".format(val_err / val_batches))
+                out_file.write("  validation loss:\t\t{:.6f}\n".format(val_err / val_batches))
+                print("  validation accuracy:\t\t{:.2f} %".format(
                         val_acc / val_batches * 100))
-                    print()
-                    pr = precision_recall(predictions, targets)
-                    print(pr)
-                    for score_type in pr:
-                        out_file.write(score_type + ":\n")
-                        for label in pr[score_type]:
-                            out_file.write("\t" + label + ": " + str(pr[score_type][label]) + "\n")
-                        out_file.write("\n")
-                    corr_ids = correct_ids(predictions, targets)
-                    print(corr_ids)
-                    out_file.write("***\n")
-                    for id in corr_ids:
-                        out_file.write(str(id) + " ")
-                    out_file.write("\n***\n")
-                    temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
-                    print('saving to {}'.format(temp_save_filename))
-                    np.savez(temp_save_filename,
-                             *lasagne.layers.get_all_param_values(l_softmax))
-                    end = time.time() - start
-                    m, s = divmod(end, 60)
-                    h, m = divmod(m, 60)
-                    print("%d:%02d:%02d" % (h, m, s))
-                    out_file.write("%d:%02d:%02d\n\n" % (h, m, s))
+                out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
+                    val_acc / val_batches * 100))
+                print()
+                pr = precision_recall(predictions, targets)
+                print(pr)
+                for score_type in pr:
+                    out_file.write(score_type + ":\n")
+                    for label in pr[score_type]:
+                        out_file.write("\t" + label + ": " + str(pr[score_type][label]) + "\n")
+                    out_file.write("\n")
+                corr_ids = correct_ids(predictions, targets)
+                print(corr_ids)
+                out_file.write("***\n")
+                for id in corr_ids:
+                    out_file.write(str(id) + " ")
+                out_file.write("\n***\n")
+                temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
+                print('saving to {}'.format(temp_save_filename))
+                np.savez(temp_save_filename,
+                         *lasagne.layers.get_all_param_values(l_softmax))
+                end = time.time() - start
+                m, s = divmod(end, 60)
+                h, m = divmod(m, 60)
+                print("%d:%02d:%02d" % (h, m, s))
+                out_file.write("%d:%02d:%02d\n\n" % (h, m, s))
 
             # Optionally, you could now dump the network weights to a file like this:
             # np.savez('model.npz', *lasagne.layers.get_all_param_values(network))
@@ -610,9 +686,9 @@ def main(params, load_model=None):
             # with np.load('model.npz') as f:
             #     param_values = [f['arr_%d' % i] for i in range(len(f.files))]
             # lasagne.layers.set_all_param_values(network, param_values)
-            except KeyboardInterrupt:
-                out_file.close()
-                print('exit ...')
+        except KeyboardInterrupt:
+            out_file.close()
+            print('exit ...')
         out_file.close()
     else:
         # After training, we compute and print the test error:
@@ -654,7 +730,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--train", action="store_true", help="active this flag to train the model")
     parser.add_argument("--test", action="store_true", help="active this flag to test the model")
-    parser.add_argument("--pretrain", action="store_true")
+    parser.add_argument("--use_snli", type=str, help="pretrain, only, or joint")
+    # parser.add_argument("--pretrain", action="store_true")
     parser.add_argument("--train_split", type=str, default="train", help="data split to train model")
     parser.add_argument("--dev_split", type=str, default="dev", help="data split for dev evaluation")
     parser.add_argument("--test_split", type=str, default="test", help="data split to evaluate")
@@ -691,6 +768,7 @@ if __name__ == '__main__':
         'dev_split': args.dev_split,
         'test_split': args.test_split,
 
+        'use_snli': args.use_snli,
         'model_type': args.model_type,
         # 'glove_file': args.glove_path,
         # 'w2v_file': args.word2vec_path,
@@ -716,11 +794,11 @@ if __name__ == '__main__':
         # 'num_classes': args.num_classes,
     }
 
-    if args.pretrain:
-        params['pretrain'] = True
+    # if args.pretrain:
+    #     params['pretrain'] = True
         # params['pretrain_data_dir'] = os.path.join(DATA_DIR, args.pretrain_data_dir)
-    else:
-        params['pretrain'] = False
+    # else:
+    #     params['pretrain'] = False
 
     if args.train:
         params['stage'] = 'train'
