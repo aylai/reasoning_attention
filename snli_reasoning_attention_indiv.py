@@ -535,8 +535,6 @@ def main(params, load_model=None):
                 print(epoch, data_src)
                 if data_src == 'snli':
                     split_data = {'train': train_df_snli, 'dev': dev_df}
-                    print("Pretraining...")
-                    # n_epochs = num_pretrain_epochs
                     train_data = split_data[params['train_split']]
                     dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
@@ -589,8 +587,6 @@ def main(params, load_model=None):
                         val_batches += 1
                 else:
                     split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
-                    print("Training ...")
-                    # n_epochs = num_epochs
                     train_data = split_data[params['train_split']]
                     test_data = split_data[params['test_split']]
                     dev_data = split_data[params['dev_split']]
