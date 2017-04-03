@@ -426,7 +426,8 @@ def main(params, load_model=None):
     l_logits3 = lasagne.layers.DenseLayer(decoder3, num_units=3)
     l_logits4 = lasagne.layers.DenseLayer(decoder4, num_units=3)
     l_logits = lasagne.layers.ElemwiseSumLayer([l_logits1, l_logits2, l_logits3, l_logits4])
-    l_softmax = lasagne.nonlinearities.softmax(l_logits)
+    l_softmax = lasagne.layers.NonLinearityLayer(l_logits, nonlinearity=lasagne.nonlinearities.softmax)
+    # l_softmax = lasagne.nonlinearities.softmax(l_logits)
     if load_model is not None:
         load_filename = os.path.join(modeldir, load_model + '.npz')
     # if load_previous:
