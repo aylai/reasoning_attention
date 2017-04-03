@@ -468,9 +468,15 @@ def main(params, load_model=None):
     test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
                                                             target_var)
     test_loss = test_loss.mean()
+    test_prediction_snli = lasagne.layers.get_output(l_softmax_snli, deterministic=True)
+    test_loss_snli = lasagne.objectives.categorical_crossentropy(test_prediction_snli,
+                                                            target_var)
+    test_loss_snli = test_loss_snli.mean()
     # lasagne.objectives.categorical_accuracy()
     # As a bonus, also create an expression for the classification accuracy:
     test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
+                      dtype=theano.config.floatX)
+    test_acc_snli = T.mean(T.eq(T.argmax(test_prediction_snli, axis=1), target_var),
                       dtype=theano.config.floatX)
 
     # Theano functions for training and computing cost
@@ -482,9 +488,9 @@ def main(params, load_model=None):
                               premise_var4, premise_mask4, hypo_var, hypo_mask, target_var],
                              [test_loss, test_acc, test_prediction, target_var])
     train_fn_snli = theano.function([premise_var1, premise_mask1, hypo_var, hypo_mask, target_var],
-                               cost, updates=updates)
+                               cost_snli, updates=updates_snli)
     val_fn_snli = theano.function([premise_var1, premise_mask1, hypo_var, hypo_mask, target_var],
-                             [test_loss, test_acc, test_prediction, target_var])
+                             [test_loss_snli, test_acc_snli, test_prediction_snli, target_var])
     split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
     # train_data = split_data[params['train_split']]
     # test_data = split_data[params['test_split']]
