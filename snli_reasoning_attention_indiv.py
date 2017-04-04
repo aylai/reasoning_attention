@@ -579,7 +579,7 @@ def main(params, load_model=None):
                         batched_df = dev_data[start_i:start_i + batch_size]
                         # ps, p_masks, hs, h_masks, labels = prepare(batched_df)
                         ps1, p_masks1,  hs, h_masks, labels = prepare_snli(batched_df)
-                        err, acc, pred, target = val_fn(ps1, p_masks1, hs, h_masks, labels)
+                        err, acc, pred, target = val_fn_snli(ps1, p_masks1, hs, h_masks, labels)
                         predictions.extend(T.argmax(pred, axis=1).eval().tolist())
                         targets.extend(target.tolist())
                         val_err += err
