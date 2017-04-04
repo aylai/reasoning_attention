@@ -261,6 +261,7 @@ hypothesis_max = 62 + 1
 
 def main(params, load_model=None):
     np.random.seed(20170302)
+    print(np.random.permutation([0,1,2,3,4,5,6,7,8,9,10]))
 
     num_pretrain_epochs = params['num_pretrain_epochs']
     print('num_epochs: {}'.format(num_pretrain_epochs))
