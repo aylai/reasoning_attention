@@ -542,10 +542,10 @@ def main(params, load_model=None):
                     train_data = split_data[params['train_split']]
                     dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
-                    print(train_data[0:10])
+                    # print(train_data[0:10])
                     # shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
                     shuffled_train_df = train_data.reindex(r.permutation(train_data.index))
-                    print(shuffled_train_df[0:10])
+                    # print(shuffled_train_df[0:10])
                     train_err = 0
                     train_acc = 0
                     train_batches = 0
