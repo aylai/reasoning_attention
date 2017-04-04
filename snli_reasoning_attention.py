@@ -190,8 +190,10 @@ hypothesis_max = 62 + 1
 #          stage='train',
 #          ):
 def main(params, load_model=None):
-    np.random.seed(20170302)
-    print(np.random.permutation([0,1,2,3,4,5,6,7,8,9,10]))
+    # np.random.seed(20170302)
+    # print(np.random.permutation([0,1,2,3,4,5,6,7,8,9,10]))
+    r = np.random.RandomState(20170302)
+    print(r.permutation([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
 
     num_pretrain_epochs = params['num_pretrain_epochs']
     print('num_epochs: {}'.format(num_pretrain_epochs))
@@ -367,7 +369,8 @@ def main(params, load_model=None):
                 for epoch in range(n_epochs):
                     # In each epoch, we do a full pass over the training data:
                     print(train_data[0:10])
-                    shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    shuffled_train_df = train_data.reindex(r.permutation(train_data.index))
+                    # shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
                     print(shuffled_train_df[0:10])
                     train_err = 0
                     train_acc = 0
