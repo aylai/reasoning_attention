@@ -27,7 +27,11 @@ np.random.seed(20170302)
 def prepare_snli(df):
     seqs_premise = []
     seqs_hypothesis = []
+    count = 0
     for cc in df['sentence1']:
+        count += 1
+        if count < 10:
+            print(cc)
         seqs_premise.append(cc)
     for cc in df['sentence2']:
         seqs_hypothesis.append(cc)
@@ -540,6 +544,7 @@ def main(params, load_model=None):
                     dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
                     shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    print(type(shuffled_train_df))
                     train_err = 0
                     train_acc = 0
                     train_batches = 0
@@ -549,6 +554,7 @@ def main(params, load_model=None):
                     for start_i in range(0, len(shuffled_train_df), batch_size):
                         batched_df = shuffled_train_df[start_i:start_i + batch_size]
                         ps1, p_masks1, hs, h_masks, labels = prepare_snli(batched_df)
+                        print(ps1)
                         train_err += train_fn_snli(ps1, p_masks1, hs, h_masks, labels)
                         err, acc, _, _ = val_fn_snli(ps1, p_masks1, hs, h_masks, labels)
                         train_acc += acc

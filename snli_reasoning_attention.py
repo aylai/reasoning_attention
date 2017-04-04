@@ -27,7 +27,11 @@ np.random.seed(20170302)
 def prepare(df):
     seqs_premise = []
     seqs_hypothesis = []
+    count = 0
     for cc in df['sentence1']:
+        count += 1
+        if count < 10:
+            print(cc)
         seqs_premise.append(cc)
     for cc in df['sentence2']:
         seqs_hypothesis.append(cc)
@@ -366,6 +370,7 @@ def main(params, load_model=None):
                 for epoch in range(n_epochs):
                     # In each epoch, we do a full pass over the training data:
                     shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    print(type(shuffled_train_df))
                     train_err = 0
                     train_acc = 0
                     train_batches = 0
