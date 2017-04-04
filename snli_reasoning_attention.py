@@ -22,6 +22,7 @@ from custom_layers import CustomEmbedding, CustomLSTMEncoder, CustomDense, Custo
 
 
 # In[2]:
+np.random.seed(20170302)
 
 def prepare(df):
     seqs_premise = []

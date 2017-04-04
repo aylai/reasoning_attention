@@ -20,6 +20,7 @@ import argparse
 
 from custom_layers import CustomEmbedding, CustomLSTMEncoder, CustomDense, CustomLSTMDecoder
 
+np.random.seed(20170302)
 
 # In[2]:
 
