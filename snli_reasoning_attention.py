@@ -190,7 +190,7 @@ hypothesis_max = 62 + 1
 #          stage='train',
 #          ):
 def main(params, load_model=None):
-    # np.random.seed(20170302)
+    np.random.seed(20170302)
     # print(np.random.permutation([0,1,2,3,4,5,6,7,8,9,10]))
     r = np.random.RandomState(20170302)
     print(r.permutation([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
