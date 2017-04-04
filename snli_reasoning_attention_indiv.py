@@ -595,7 +595,8 @@ def main(params, load_model=None):
                     test_data = split_data[params['test_split']]
                     dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
-                    shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    # shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                    print("THIS SHUFFLE IS TURNED OFF")
                     train_err = 0
                     train_acc = 0
                     train_batches = 0
