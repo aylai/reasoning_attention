@@ -292,12 +292,12 @@ def main(params, load_model=None):
     print("Building network ...")
     premise_var1 = T.imatrix('premise_var')
     premise_mask1 = T.imatrix('premise_mask')
-    premise_var2 = T.imatrix('premise_var')
-    premise_mask2 = T.imatrix('premise_mask')
-    premise_var3 = T.imatrix('premise_var')
-    premise_mask3 = T.imatrix('premise_mask')
-    premise_var4 = T.imatrix('premise_var')
-    premise_mask4 = T.imatrix('premise_mask')
+    # premise_var2 = T.imatrix('premise_var')
+    # premise_mask2 = T.imatrix('premise_mask')
+    # premise_var3 = T.imatrix('premise_var')
+    # premise_mask3 = T.imatrix('premise_mask')
+    # premise_var4 = T.imatrix('premise_var')
+    # premise_mask4 = T.imatrix('premise_mask')
     hypo_var = T.imatrix('hypo_var')
     hypo_mask = T.imatrix('hypo_mask')
     unchanged_W = pickle.load(open(params['data_dir'] + '/unchanged_W.pkl', 'rb'))
@@ -315,36 +315,36 @@ def main(params, load_model=None):
 
     l_premise1 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var1)
     l_premise_mask1 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask1)
-    l_premise2 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var2)
-    l_premise_mask2 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask2)
-    l_premise3 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var3)
-    l_premise_mask3 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask3)
-    l_premise4 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var4)
-    l_premise_mask4 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask4)
+    # l_premise2 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var2)
+    # l_premise_mask2 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask2)
+    # l_premise3 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var3)
+    # l_premise_mask3 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask3)
+    # l_premise4 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_var4)
+    # l_premise_mask4 = lasagne.layers.InputLayer(shape=(None, premise_max), input_var=premise_mask4)
     l_hypo = lasagne.layers.InputLayer(shape=(None, hypothesis_max), input_var=hypo_var)
     l_hypo_mask = lasagne.layers.InputLayer(shape=(None, hypothesis_max), input_var=hypo_mask)
 
     premise_embedding1 = CustomEmbedding(l_premise1, unchanged_W, unchanged_W_shape,
                                         oov_in_train_W, oov_in_train_W_shape,
                                         p=p)
-    premise_embedding2 = CustomEmbedding(l_premise2, unchanged_W=premise_embedding1.unchanged_W,
-                                        unchanged_W_shape=unchanged_W_shape,
-                                        oov_in_train_W=premise_embedding1.oov_in_train_W,
-                                        oov_in_train_W_shape=oov_in_train_W_shape,
-                                        p=p,
-                                        dropout_mask=premise_embedding1.dropout_mask)
-    premise_embedding3 = CustomEmbedding(l_premise3, unchanged_W=premise_embedding1.unchanged_W,
-                                         unchanged_W_shape=unchanged_W_shape,
-                                         oov_in_train_W=premise_embedding1.oov_in_train_W,
-                                         oov_in_train_W_shape=oov_in_train_W_shape,
-                                         p=p,
-                                         dropout_mask=premise_embedding1.dropout_mask)
-    premise_embedding4 = CustomEmbedding(l_premise4, unchanged_W=premise_embedding1.unchanged_W,
-                                         unchanged_W_shape=unchanged_W_shape,
-                                         oov_in_train_W=premise_embedding1.oov_in_train_W,
-                                         oov_in_train_W_shape=oov_in_train_W_shape,
-                                         p=p,
-                                         dropout_mask=premise_embedding1.dropout_mask)
+    # premise_embedding2 = CustomEmbedding(l_premise2, unchanged_W=premise_embedding1.unchanged_W,
+    #                                     unchanged_W_shape=unchanged_W_shape,
+    #                                     oov_in_train_W=premise_embedding1.oov_in_train_W,
+    #                                     oov_in_train_W_shape=oov_in_train_W_shape,
+    #                                     p=p,
+    #                                     dropout_mask=premise_embedding1.dropout_mask)
+    # premise_embedding3 = CustomEmbedding(l_premise3, unchanged_W=premise_embedding1.unchanged_W,
+    #                                      unchanged_W_shape=unchanged_W_shape,
+    #                                      oov_in_train_W=premise_embedding1.oov_in_train_W,
+    #                                      oov_in_train_W_shape=oov_in_train_W_shape,
+    #                                      p=p,
+    #                                      dropout_mask=premise_embedding1.dropout_mask)
+    # premise_embedding4 = CustomEmbedding(l_premise4, unchanged_W=premise_embedding1.unchanged_W,
+    #                                      unchanged_W_shape=unchanged_W_shape,
+    #                                      oov_in_train_W=premise_embedding1.oov_in_train_W,
+    #                                      oov_in_train_W_shape=oov_in_train_W_shape,
+    #                                      p=p,
+    #                                      dropout_mask=premise_embedding1.dropout_mask)
     # weights shared with premise_embedding
     hypo_embedding = CustomEmbedding(l_hypo, unchanged_W=premise_embedding1.unchanged_W,
                                      unchanged_W_shape=unchanged_W_shape,
@@ -373,24 +373,24 @@ def main(params, load_model=None):
 
     l_premise_linear1 = CustomDense(premise_embedding1, k,
                                    nonlinearity=lasagne.nonlinearities.linear)
-    l_premise_linear2 = CustomDense(premise_embedding2, k,
-                                   nonlinearity=lasagne.nonlinearities.linear)
-    l_premise_linear3 = CustomDense(premise_embedding3, k,
-                                   nonlinearity=lasagne.nonlinearities.linear)
-    l_premise_linear4 = CustomDense(premise_embedding4, k,
-                                   nonlinearity=lasagne.nonlinearities.linear)
+    # l_premise_linear2 = CustomDense(premise_embedding2, k,
+    #                                nonlinearity=lasagne.nonlinearities.linear)
+    # l_premise_linear3 = CustomDense(premise_embedding3, k,
+    #                                nonlinearity=lasagne.nonlinearities.linear)
+    # l_premise_linear4 = CustomDense(premise_embedding4, k,
+    #                                nonlinearity=lasagne.nonlinearities.linear)
     l_hypo_linear1 = CustomDense(hypo_embedding, k,
                                 W=l_premise_linear1.W, b=l_premise_linear1.b,
                                 nonlinearity=lasagne.nonlinearities.linear)
-    l_hypo_linear2 = CustomDense(hypo_embedding, k,
-                                W=l_premise_linear2.W, b=l_premise_linear2.b,
-                                nonlinearity=lasagne.nonlinearities.linear)
-    l_hypo_linear3 = CustomDense(hypo_embedding, k,
-                                W=l_premise_linear3.W, b=l_premise_linear3.b,
-                                nonlinearity=lasagne.nonlinearities.linear)
-    l_hypo_linear4 = CustomDense(hypo_embedding, k,
-                                W=l_premise_linear4.W, b=l_premise_linear4.b,
-                                nonlinearity=lasagne.nonlinearities.linear)
+    # l_hypo_linear2 = CustomDense(hypo_embedding, k,
+    #                             W=l_premise_linear2.W, b=l_premise_linear2.b,
+    #                             nonlinearity=lasagne.nonlinearities.linear)
+    # l_hypo_linear3 = CustomDense(hypo_embedding, k,
+    #                             W=l_premise_linear3.W, b=l_premise_linear3.b,
+    #                             nonlinearity=lasagne.nonlinearities.linear)
+    # l_hypo_linear4 = CustomDense(hypo_embedding, k,
+    #                             W=l_premise_linear4.W, b=l_premise_linear4.b,
+    #                             nonlinearity=lasagne.nonlinearities.linear)
 
     encoder1 = CustomLSTMEncoder(l_premise_linear1, k, peepholes=False, mask_input=l_premise_mask1)
     decoder1 = CustomLSTMDecoder(l_hypo_linear1, k, cell_init=encoder1, peepholes=False, mask_input=l_hypo_mask,
@@ -398,39 +398,39 @@ def main(params, load_model=None):
                                 attention=attention,
                                 word_by_word=word_by_word
                                 )
-    encoder2 = CustomLSTMEncoder(l_premise_linear2, k, peepholes=False, mask_input=l_premise_mask2)
-    decoder2 = CustomLSTMDecoder(l_hypo_linear2, k, cell_init=encoder2, peepholes=False, mask_input=l_hypo_mask,
-                                encoder_mask_input=l_premise_mask2,
-                                attention=attention,
-                                word_by_word=word_by_word
-                                )
-    encoder3 = CustomLSTMEncoder(l_premise_linear3, k, peepholes=False, mask_input=l_premise_mask3)
-    decoder3 = CustomLSTMDecoder(l_hypo_linear3, k, cell_init=encoder3, peepholes=False, mask_input=l_hypo_mask,
-                                encoder_mask_input=l_premise_mask3,
-                                attention=attention,
-                                word_by_word=word_by_word
-                                )
-    encoder4 = CustomLSTMEncoder(l_premise_linear4, k, peepholes=False, mask_input=l_premise_mask4)
-    decoder4 = CustomLSTMDecoder(l_hypo_linear4, k, cell_init=encoder4, peepholes=False, mask_input=l_hypo_mask,
-                                encoder_mask_input=l_premise_mask4,
-                                attention=attention,
-                                word_by_word=word_by_word
-                                )
+    # encoder2 = CustomLSTMEncoder(l_premise_linear2, k, peepholes=False, mask_input=l_premise_mask2)
+    # decoder2 = CustomLSTMDecoder(l_hypo_linear2, k, cell_init=encoder2, peepholes=False, mask_input=l_hypo_mask,
+    #                             encoder_mask_input=l_premise_mask2,
+    #                             attention=attention,
+    #                             word_by_word=word_by_word
+    #                             )
+    # encoder3 = CustomLSTMEncoder(l_premise_linear3, k, peepholes=False, mask_input=l_premise_mask3)
+    # decoder3 = CustomLSTMDecoder(l_hypo_linear3, k, cell_init=encoder3, peepholes=False, mask_input=l_hypo_mask,
+    #                             encoder_mask_input=l_premise_mask3,
+    #                             attention=attention,
+    #                             word_by_word=word_by_word
+    #                             )
+    # encoder4 = CustomLSTMEncoder(l_premise_linear4, k, peepholes=False, mask_input=l_premise_mask4)
+    # decoder4 = CustomLSTMDecoder(l_hypo_linear4, k, cell_init=encoder4, peepholes=False, mask_input=l_hypo_mask,
+    #                             encoder_mask_input=l_premise_mask4,
+    #                             attention=attention,
+    #                             word_by_word=word_by_word
+    #                             )
     if p > 0.:
         print('apply dropout rate {} to decoder'.format(p))
         decoder1 = lasagne.layers.DropoutLayer(decoder1, p)
-        decoder2 = lasagne.layers.DropoutLayer(decoder2, p)
-        decoder3 = lasagne.layers.DropoutLayer(decoder3, p)
-        decoder4 = lasagne.layers.DropoutLayer(decoder4, p)
+        # decoder2 = lasagne.layers.DropoutLayer(decoder2, p)
+        # decoder3 = lasagne.layers.DropoutLayer(decoder3, p)
+        # decoder4 = lasagne.layers.DropoutLayer(decoder4, p)
     l_softmax_snli = lasagne.layers.DenseLayer(
            decoder1, num_units=3,
            nonlinearity=lasagne.nonlinearities.softmax)
     l_logits1 = lasagne.layers.DenseLayer(decoder1, num_units=3)
-    l_logits2 = lasagne.layers.DenseLayer(decoder2, num_units=3)
-    l_logits3 = lasagne.layers.DenseLayer(decoder3, num_units=3)
-    l_logits4 = lasagne.layers.DenseLayer(decoder4, num_units=3)
-    l_logits = lasagne.layers.ElemwiseSumLayer([l_logits1, l_logits2, l_logits3, l_logits4])
-    l_softmax = lasagne.layers.NonlinearityLayer(l_logits, nonlinearity=lasagne.nonlinearities.softmax)
+    # l_logits2 = lasagne.layers.DenseLayer(decoder2, num_units=3)
+    # l_logits3 = lasagne.layers.DenseLayer(decoder3, num_units=3)
+    # l_logits4 = lasagne.layers.DenseLayer(decoder4, num_units=3)
+    # l_logits = lasagne.layers.ElemwiseSumLayer([l_logits1, l_logits2, l_logits3, l_logits4])
+    # l_softmax = lasagne.layers.NonlinearityLayer(l_logits, nonlinearity=lasagne.nonlinearities.softmax)
     if load_model is not None:
         print("I DON'T KNOW HOW TO LOAD SAVED MODEL....")
         load_filename = os.path.join(modeldir, load_model + '.npz')
@@ -440,17 +440,17 @@ def main(params, load_model=None):
         # load_filename = './snli/{}_model_epoch{}.npz'.format(mode, load_epoch)
         with np.load(load_filename) as f:
             param_values = [f['arr_%d' % i] for i in range(len(f.files))]
-        lasagne.layers.set_all_param_values(l_softmax, param_values)
+        # lasagne.layers.set_all_param_values(l_softmax, param_values)
 
     target_var = T.ivector('target_var')
 
     # lasagne.layers.get_output produces a variable for the output of the net
-    prediction = lasagne.layers.get_output(l_softmax, deterministic=False)
+    # prediction = lasagne.layers.get_output(l_softmax, deterministic=False)
     prediction_snli = lasagne.layers.get_output(l_softmax_snli, deterministic=False)
     # The network output will have shape (n_batch, 3);
-    loss = lasagne.objectives.categorical_crossentropy(prediction, target_var)
+    # loss = lasagne.objectives.categorical_crossentropy(prediction, target_var)
     loss_snli = lasagne.objectives.categorical_crossentropy(prediction_snli, target_var)
-    cost = loss.mean()
+    # cost = loss.mean()
     cost_snli = loss_snli.mean()
     # if l2_weight > 0.:
     #     # apply l2 regularization
@@ -461,36 +461,36 @@ def main(params, load_model=None):
     #                                                                   lasagne.regularization.l2) * l2_weight
     #     cost += l2_penalty
     # Retrieve all parameters from the network
-    all_params = lasagne.layers.get_all_params(l_softmax, trainable=True)
+    # all_params = lasagne.layers.get_all_params(l_softmax, trainable=True)
     all_params_snli = lasagne.layers.get_all_params(l_softmax_snli, trainable=True)
     # Compute adam updates for training
     print("Computing updates ...")
-    updates = lasagne.updates.adam(cost, all_params, learning_rate=learning_rate)
+    # updates = lasagne.updates.adam(cost, all_params, learning_rate=learning_rate)
     updates_snli = lasagne.updates.adam(cost_snli, all_params_snli, learning_rate=learning_rate)
 
-    test_prediction = lasagne.layers.get_output(l_softmax, deterministic=True)
-    test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
-                                                            target_var)
-    test_loss = test_loss.mean()
+    # test_prediction = lasagne.layers.get_output(l_softmax, deterministic=True)
+    # test_loss = lasagne.objectives.categorical_crossentropy(test_prediction,
+    #                                                         target_var)
+    # test_loss = test_loss.mean()
     test_prediction_snli = lasagne.layers.get_output(l_softmax_snli, deterministic=True)
     test_loss_snli = lasagne.objectives.categorical_crossentropy(test_prediction_snli,
                                                             target_var)
     test_loss_snli = test_loss_snli.mean()
     # lasagne.objectives.categorical_accuracy()
     # As a bonus, also create an expression for the classification accuracy:
-    test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
-                      dtype=theano.config.floatX)
+    # test_acc = T.mean(T.eq(T.argmax(test_prediction, axis=1), target_var),
+    #                   dtype=theano.config.floatX)
     test_acc_snli = T.mean(T.eq(T.argmax(test_prediction_snli, axis=1), target_var),
                       dtype=theano.config.floatX)
 
     # Theano functions for training and computing cost
     print("Compiling functions ...")
-    train_fn = theano.function([premise_var1, premise_mask1, premise_var2, premise_mask2, premise_var3, premise_mask3,
-                                premise_var4, premise_mask4, hypo_var, hypo_mask, target_var],
-                               cost, updates=updates)
-    val_fn = theano.function([premise_var1, premise_mask1, premise_var2, premise_mask2, premise_var3, premise_mask3,
-                              premise_var4, premise_mask4, hypo_var, hypo_mask, target_var],
-                             [test_loss, test_acc, test_prediction, target_var])
+    # train_fn = theano.function([premise_var1, premise_mask1, premise_var2, premise_mask2, premise_var3, premise_mask3,
+    #                             premise_var4, premise_mask4, hypo_var, hypo_mask, target_var],
+    #                            cost, updates=updates)
+    # val_fn = theano.function([premise_var1, premise_mask1, premise_var2, premise_mask2, premise_var3, premise_mask3,
+    #                           premise_var4, premise_mask4, hypo_var, hypo_mask, target_var],
+    #                          [test_loss, test_acc, test_prediction, target_var])
     train_fn_snli = theano.function([premise_var1, premise_mask1, hypo_var, hypo_mask, target_var],
                                cost_snli, updates=updates_snli)
     val_fn_snli = theano.function([premise_var1, premise_mask1, hypo_var, hypo_mask, target_var],
@@ -573,7 +573,7 @@ def main(params, load_model=None):
                         if train_batches % save_freq == 0:
                             print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
                             np.savez(save_filename + '.npz',
-                                     *lasagne.layers.get_all_param_values(l_softmax))
+                                     *lasagne.layers.get_all_param_values(l_softmax_snli))
                             save_at = time.time()
 
                     # And a full pass over the validation data:
@@ -592,61 +592,61 @@ def main(params, load_model=None):
                         val_err += err
                         val_acc += acc
                         val_batches += 1
-                else:
-                    split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
-                    train_data = split_data[params['train_split']]
-                    test_data = split_data[params['test_split']]
-                    dev_data = split_data[params['dev_split']]
-                    # In each epoch, we do a full pass over the training data:
-                    # shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
-                    print("THIS SHUFFLE IS TURNED OFF")
-                    train_err = 0
-                    train_acc = 0
-                    train_batches = 0
-                    start_time = time.time()
-                    display_at = time.time()
-                    save_at = time.time()
-                    for start_i in range(0, len(shuffled_train_df), batch_size):
-                        batched_df = shuffled_train_df[start_i:start_i + batch_size]
-                        ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(batched_df)
-                        train_err += train_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
-                        err, acc, _, _ = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
-                        train_acc += acc
-                        train_batches += 1
-                        # display
-                        if train_batches % display_freq == 0:
-                            print("Seen {:d} samples, time used: {:.3f}s".format(
-                                start_i + batch_size, time.time() - display_at))
-                            out_file.write("Seen {:d} samples, time used: {:.3f}s\n".format(
-                                start_i + batch_size, time.time() - display_at))
-                            print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
-                            out_file.write("  current training loss:\t\t{:.6f}\n".format(train_err / train_batches))
-                            print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
-                            out_file.write("  current training accuracy:\t\t{:.6f}\n".format(train_acc / train_batches))
-                        # do tmp save model
-                        if train_batches % save_freq == 0:
-                            print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
-                            np.savez(save_filename + '.npz',
-                                     *lasagne.layers.get_all_param_values(l_softmax))
-                            save_at = time.time()
-
-                    # And a full pass over the validation data:
-                    val_err = 0
-                    val_acc = 0
-                    val_batches = 0
-                    predictions = []
-                    targets = []
-                    for start_i in range(0, len(dev_data), batch_size):
-                        batched_df = dev_data[start_i:start_i + batch_size]
-                        # ps, p_masks, hs, h_masks, labels = prepare(batched_df)
-                        ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(
-                            batched_df)
-                        err, acc, pred, target = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
-                        predictions.extend(T.argmax(pred, axis=1).eval().tolist())
-                        targets.extend(target.tolist())
-                        val_err += err
-                        val_acc += acc
-                        val_batches += 1
+                # else:
+                #     split_data = {'train': train_df, 'test': test_df, 'dev': dev_df}
+                #     train_data = split_data[params['train_split']]
+                #     test_data = split_data[params['test_split']]
+                #     dev_data = split_data[params['dev_split']]
+                #     # In each epoch, we do a full pass over the training data:
+                #     # shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
+                #     print("THIS SHUFFLE IS TURNED OFF")
+                #     train_err = 0
+                #     train_acc = 0
+                #     train_batches = 0
+                #     start_time = time.time()
+                #     display_at = time.time()
+                #     save_at = time.time()
+                #     for start_i in range(0, len(shuffled_train_df), batch_size):
+                #         batched_df = shuffled_train_df[start_i:start_i + batch_size]
+                #         ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(batched_df)
+                #         train_err += train_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
+                #         err, acc, _, _ = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
+                #         train_acc += acc
+                #         train_batches += 1
+                #         # display
+                #         if train_batches % display_freq == 0:
+                #             print("Seen {:d} samples, time used: {:.3f}s".format(
+                #                 start_i + batch_size, time.time() - display_at))
+                #             out_file.write("Seen {:d} samples, time used: {:.3f}s\n".format(
+                #                 start_i + batch_size, time.time() - display_at))
+                #             print("  current training loss:\t\t{:.6f}".format(train_err / train_batches))
+                #             out_file.write("  current training loss:\t\t{:.6f}\n".format(train_err / train_batches))
+                #             print("  current training accuracy:\t\t{:.6f}".format(train_acc / train_batches))
+                #             out_file.write("  current training accuracy:\t\t{:.6f}\n".format(train_acc / train_batches))
+                #         # do tmp save model
+                #         if train_batches % save_freq == 0:
+                #             print('saving to {}, time used {:.3f}s'.format(save_filename, time.time() - save_at))
+                #             np.savez(save_filename + '.npz',
+                #                      *lasagne.layers.get_all_param_values(l_softmax))
+                #             save_at = time.time()
+                #
+                #     # And a full pass over the validation data:
+                #     val_err = 0
+                #     val_acc = 0
+                #     val_batches = 0
+                #     predictions = []
+                #     targets = []
+                #     for start_i in range(0, len(dev_data), batch_size):
+                #         batched_df = dev_data[start_i:start_i + batch_size]
+                #         # ps, p_masks, hs, h_masks, labels = prepare(batched_df)
+                #         ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(
+                #             batched_df)
+                #         err, acc, pred, target = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
+                #         predictions.extend(T.argmax(pred, axis=1).eval().tolist())
+                #         targets.extend(target.tolist())
+                #         val_err += err
+                #         val_acc += acc
+                #         val_batches += 1
 
                 # Then we print the results for this epoch:
                 print("Epoch {} of {} took {:.3f}s".format(
@@ -681,8 +681,9 @@ def main(params, load_model=None):
                 out_file.write("\n***\n")
                 temp_save_filename = save_filename + '_' + str(epoch + 1) + '.npz'
                 print('saving to {}'.format(temp_save_filename))
-                np.savez(temp_save_filename,
-                         *lasagne.layers.get_all_param_values(l_softmax))
+                print("WHAT VARIABLES TO SAVE?")
+                # np.savez(temp_save_filename,
+                #          *lasagne.layers.get_all_param_values(l_softmax))
                 end = time.time() - start
                 m, s = divmod(end, 60)
                 h, m = divmod(m, 60)
@@ -700,31 +701,31 @@ def main(params, load_model=None):
             out_file.close()
             print('exit ...')
         out_file.close()
-    else:
-        # After training, we compute and print the test error:
-        test_err = 0
-        test_acc = 0
-        test_batches = 0
-        predictions = []
-        targets = []
-        for start_i in range(0, len(test_df), batch_size):
-            batched_df = test_df[start_i:start_i + batch_size]
-            ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(batched_df)
-            err, acc, pred, target = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
-            predictions.extend(T.argmax(pred, axis=1).eval().tolist())
-            targets.extend(target.tolist())
-            # print(.eval())
-            # print(target)
-            # print(T.eq(T.argmax(pred, axis=1), target).eval())
-            # print("***")
-            test_err += err
-            test_acc += acc
-            test_batches += 1
-        print("Final results:")
-        print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
-        print("  test accuracy:\t\t{:.2f} %".format(
-            test_acc / test_batches * 100))
-        print(precision_recall(predictions, targets))
+    # else:
+    #     # After training, we compute and print the test error:
+    #     test_err = 0
+    #     test_acc = 0
+    #     test_batches = 0
+    #     predictions = []
+    #     targets = []
+    #     for start_i in range(0, len(test_df), batch_size):
+    #         batched_df = test_df[start_i:start_i + batch_size]
+    #         ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(batched_df)
+    #         err, acc, pred, target = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels)
+    #         predictions.extend(T.argmax(pred, axis=1).eval().tolist())
+    #         targets.extend(target.tolist())
+    #         # print(.eval())
+    #         # print(target)
+    #         # print(T.eq(T.argmax(pred, axis=1), target).eval())
+    #         # print("***")
+    #         test_err += err
+    #         test_acc += acc
+    #         test_batches += 1
+    #     print("Final results:")
+    #     print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
+    #     print("  test accuracy:\t\t{:.2f} %".format(
+    #         test_acc / test_batches * 100))
+    #     print(precision_recall(predictions, targets))
 
 
 # In[9]:
