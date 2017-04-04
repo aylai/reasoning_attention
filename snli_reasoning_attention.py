@@ -22,7 +22,6 @@ from custom_layers import CustomEmbedding, CustomLSTMEncoder, CustomDense, Custo
 
 
 # In[2]:
-np.random.seed(20170302)
 
 def prepare(df):
     seqs_premise = []
@@ -191,6 +190,7 @@ hypothesis_max = 62 + 1
 #          stage='train',
 #          ):
 def main(params, load_model=None):
+    np.random.seed(20170302)
 
     num_pretrain_epochs = params['num_pretrain_epochs']
     print('num_epochs: {}'.format(num_pretrain_epochs))
@@ -365,6 +365,7 @@ def main(params, load_model=None):
                 # We iterate over epochs:
                 for epoch in range(n_epochs):
                     # In each epoch, we do a full pass over the training data:
+                    print(train_data[0:10])
                     shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
                     print(shuffled_train_df[0:10])
                     train_err = 0

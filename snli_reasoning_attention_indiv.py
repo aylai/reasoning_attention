@@ -20,7 +20,6 @@ import argparse
 
 from custom_layers import CustomEmbedding, CustomLSTMEncoder, CustomDense, CustomLSTMDecoder
 
-np.random.seed(20170302)
 
 # In[2]:
 
@@ -261,6 +260,7 @@ hypothesis_max = 62 + 1
 
 
 def main(params, load_model=None):
+    np.random.seed(20170302)
 
     num_pretrain_epochs = params['num_pretrain_epochs']
     print('num_epochs: {}'.format(num_pretrain_epochs))
@@ -539,6 +539,7 @@ def main(params, load_model=None):
                     train_data = split_data[params['train_split']]
                     dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
+                    print(train_data[0:10])
                     shuffled_train_df = train_data.reindex(np.random.permutation(train_data.index))
                     print(shuffled_train_df[0:10])
                     train_err = 0
@@ -550,7 +551,6 @@ def main(params, load_model=None):
                     for start_i in range(0, len(shuffled_train_df), batch_size):
                         batched_df = shuffled_train_df[start_i:start_i + batch_size]
                         ps1, p_masks1, hs, h_masks, labels = prepare_snli(batched_df)
-                        print(ps1)
                         train_err += train_fn_snli(ps1, p_masks1, hs, h_masks, labels)
                         err, acc, _, _ = val_fn_snli(ps1, p_masks1, hs, h_masks, labels)
                         train_acc += acc
