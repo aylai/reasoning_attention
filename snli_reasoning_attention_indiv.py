@@ -518,7 +518,8 @@ def main(params, load_model=None):
                     start_time = time.time()
                     display_at = time.time()
                     save_at = time.time()
-                    for start_i in range(0, len(shuffled_train_df), batch_size):
+                    # for start_i in range(0, len(shuffled_train_df), batch_size):
+                    for start_i in range(0, 10000, batch_size):
                         batched_df = shuffled_train_df[start_i:start_i + batch_size]
                         ps1, p_masks1, hs, h_masks, labels = prepare_snli(batched_df)
                         train_err += train_fn_snli(ps1, p_masks1, hs, h_masks, labels)
