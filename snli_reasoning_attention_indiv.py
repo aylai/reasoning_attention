@@ -478,6 +478,8 @@ def main(params, load_model=None):
         else:
             if params['use_snli'] == "pretrain":
                 for i in range(num_pretrain_epochs):
+                    epoch_data.append("mpe")
+                for i in range(num_pretrain_epochs):
                     epoch_data.append("snli")
                 for i in range(num_epochs):
                     epoch_data.append("mpe")
@@ -616,9 +618,9 @@ def main(params, load_model=None):
 
                 # Then we print the results for this epoch:
                 print("Epoch {} of {} took {:.3f}s".format(
-                        epoch + 1, num_epochs, time.time() - start_time))
+                        epoch + 1, len(epoch_data), time.time() - start_time))
                 out_file.write("Epoch {} of {} took {:.3f}s\n".format(
-                    epoch + 1, num_epochs, time.time() - start_time))
+                    epoch + 1, len(epoch_data), time.time() - start_time))
                 print("  training loss:\t\t{:.6f}".format(train_err / train_batches))
                 out_file.write("  training loss:\t\t{:.6f}\n".format(train_err / train_batches))
                 print("  training accuracy:\t\t{:.2f} %".format(
