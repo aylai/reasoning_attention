@@ -180,7 +180,7 @@ def load_data(params, type=None):
             train_df = train_df[train_df.gold_label != '-']
             train_df = train_df.reset_index()
             print(len(train_df))
-    if splits['dev'] > 0:# and type != "snli":
+    if splits['dev'] > 0 and type != "snli":
         with open(dir + '/converted_dev'+append+'.pkl', 'rb') as f:
             print('Loading dev ...')
             dev_df = pickle.load(f)
@@ -277,7 +277,7 @@ def main(params, load_model=None):
     print('word_by_word: {}'.format(word_by_word))
     mode = params['model_type']
     if params['use_snli'] is not None:
-        train_df_snli, dev_df_snli, _ = load_data(params, type="snli")
+        train_df_snli, _, _ = load_data(params, type="snli")
         train_df, dev_df, test_df = load_data(params, type="mpe")
     else:
         train_df, dev_df, test_df = load_data(params)
@@ -493,7 +493,7 @@ def main(params, load_model=None):
 
         if params['use_snli'] is not None:
             print('train_df_snli.shape: {0}'.format(train_df_snli.shape))
-            print('dev_df_snli.shape: {0}'.format(dev_df_snli.shape))
+            # print('dev_df_snli.shape: {0}'.format(dev_df.shape))
         print('train_df.shape: {0}'.format(train_df.shape))
         print('dev_df.shape: {0}'.format(dev_df.shape))
         print('test_df.shape: {0}'.format(test_df.shape))
@@ -504,7 +504,7 @@ def main(params, load_model=None):
             for epoch, data_src in enumerate(epoch_data):
                 print(epoch, data_src)
                 if data_src == 'snli':
-                    split_data = {'train': train_df_snli, 'dev': dev_df_snli}
+                    split_data = {'train': train_df_snli, 'dev': dev_df}
                     train_data = split_data[params['train_split']]
                     dev_data = split_data[params['dev_split']]
                     # In each epoch, we do a full pass over the training data:
@@ -550,12 +550,12 @@ def main(params, load_model=None):
                     targets = []
                     for start_i in range(0, len(dev_data), batch_size):
                         batched_df = dev_data[start_i:start_i + batch_size]
-                        ps1, p_masks1, hs, h_masks, labels = prepare_snli(batched_df)
-                        err, acc, pred, target = val_fn_snli(ps1, p_masks1, hs, h_masks, labels)
-                        # ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(
-                        #     batched_df)
-                        # err, acc, pred, target = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs,
-                        #                                 h_masks, labels)
+                        # ps1, p_masks1, hs, h_masks, labels = prepare_snli(batched_df)
+                        # err, acc, pred, target = val_fn_snli(ps1, p_masks1, hs, h_masks, labels)
+                        ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs, h_masks, labels = prepare_mpe(
+                            batched_df)
+                        err, acc, pred, target = val_fn(ps1, p_masks1, ps2, p_masks2, ps3, p_masks3, ps4, p_masks4, hs,
+                                                        h_masks, labels)
                         predictions.extend(T.argmax(pred, axis=1).eval().tolist())
                         targets.extend(target.tolist())
                         val_err += err
