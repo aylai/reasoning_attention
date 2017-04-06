@@ -640,7 +640,7 @@ def main(params, load_model=None):
                         out_file.write("\t" + label + ": " + str(pr[score_type][label]) + "\n")
                     out_file.write("\n")
                 corr_ids = correct_ids(predictions, targets)
-                print(corr_ids)
+                # print(corr_ids)
                 out_file.write("***\n")
                 for id in corr_ids:
                     out_file.write(str(id) + " ")
