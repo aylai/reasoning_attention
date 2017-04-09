@@ -497,6 +497,7 @@ def main(params, load_model=None):
         print("  test accuracy:\t\t{:.2f} %".format(
             test_acc / test_batches * 100))
         num_correct = np.sum(np.asarray(predictions) == np.asarray(targets))
+        print(num_correct)
         acc = num_correct / float(len(predictions))
         print("  final test acc: {:.2f} %".format(acc * 100))
         print(precision_recall(predictions, targets))
