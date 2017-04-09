@@ -433,6 +433,9 @@ def main(params, load_model=None):
                             val_acc / val_batches * 100))
                     out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
                         val_acc / val_batches * 100))
+                    num_correct = np.sum(np.asarray(predictions) == np.asarray(targets))
+                    acc = num_correct / float(len(predictions))
+                    print("  final val acc: {:.2f} %".format(acc))
                     print()
                     pr = precision_recall(predictions, targets)
                     print(pr)
@@ -492,11 +495,9 @@ def main(params, load_model=None):
         print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
         print("  test accuracy:\t\t{:.2f} %".format(
             test_acc / test_batches * 100))
-        print(type(predictions))
-        print(predictions[1:10])
-        print(type(targets))
-        print(targets[1:10])
-        print("  final test acc: {:.2f} %".format(np.sum(np.asarray(predictions) == np.asarray(targets))))
+        num_correct = np.sum(np.asarray(predictions) == np.asarray(targets))
+        acc = num_correct / float(len(predictions))
+        print("  final test acc: {:.2f} %".format(acc))
         print(precision_recall(predictions, targets))
 
 
