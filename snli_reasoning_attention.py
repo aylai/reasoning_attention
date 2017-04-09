@@ -435,7 +435,7 @@ def main(params, load_model=None):
                         val_acc / val_batches * 100))
                     num_correct = np.sum(np.asarray(predictions) == np.asarray(targets))
                     acc = num_correct / float(len(predictions))
-                    print("  final val acc: {:.2f} %".format(acc))
+                    print("  final val acc: {:.2f} %".format(acc * 100))
                     print()
                     pr = precision_recall(predictions, targets)
                     print(pr)
@@ -497,7 +497,7 @@ def main(params, load_model=None):
             test_acc / test_batches * 100))
         num_correct = np.sum(np.asarray(predictions) == np.asarray(targets))
         acc = num_correct / float(len(predictions))
-        print("  final test acc: {:.2f} %".format(acc))
+        print("  final test acc: {:.2f} %".format(acc * 100))
         print(precision_recall(predictions, targets))
 
 
