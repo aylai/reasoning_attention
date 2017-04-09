@@ -434,6 +434,7 @@ def main(params, load_model=None):
                     out_file.write("  validation accuracy:\t\t{:.2f} %\n".format(
                         val_acc / val_batches * 100))
                     num_correct = np.sum(np.asarray(predictions) == np.asarray(targets))
+                    print(num_correct)
                     acc = num_correct / float(len(predictions))
                     print("  final val acc: {:.2f} %".format(acc * 100))
                     print()
