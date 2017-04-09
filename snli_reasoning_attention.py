@@ -492,6 +492,7 @@ def main(params, load_model=None):
         print("  test loss:\t\t\t{:.6f}".format(test_err / test_batches))
         print("  test accuracy:\t\t{:.2f} %".format(
             test_acc / test_batches * 100))
+        print("  final test acc: {:.2f} %".format(np.sum(predictions == targets)))
         print(precision_recall(predictions, targets))
 
 
