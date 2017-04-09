@@ -538,7 +538,8 @@ if __name__ == '__main__':
 
     param_idx = args.grid_id
 
-    dropout_params = [1.0, 0.9, 0.8, 0.7, 0.6]
+    # dropout_params = [1.0, 0.9, 0.8, 0.7, 0.6]
+    dropout_params = [0.7, 0.6]
     learning_rate = [1e-4, 1e-3, 1e-2]
     dim = [100, 75]
     s = [dropout_params, learning_rate, dim]
