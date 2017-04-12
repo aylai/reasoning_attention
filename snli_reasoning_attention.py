@@ -146,16 +146,21 @@ def precision_recall(predicted, labels):
     false_pos = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
     false_neg = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
     label_map = {0: "neutral", 1: "contradiction", 2: "entailment"}
+    correct_label = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    total_label = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
     for idx, pred_label_id in enumerate(predicted):
         total_pred += 1
         true_label_id = labels[idx]
+        total_label[label_map[true_label_id]] += 1
         if pred_label_id == true_label_id:
             true_pos[label_map[pred_label_id]] += 1
+            correct_label[label_map[true_label_id]] += 1
         else:
             false_pos[label_map[pred_label_id]] += 1
             false_neg[label_map[true_label_id]] += 1
     precision = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
     recall = {'entailment': 0, 'neutral': 0, 'contradiction': 0}
+    acc_label = {}
     for label in ['entailment', 'neutral', 'contradiction']:
         # print(label, ":", str(true_pos[label] + false_neg[label]))
         prec_sum = 1.0 * (true_pos[label] + false_pos[label])
@@ -168,7 +173,8 @@ def precision_recall(predicted, labels):
             recall[label] = true_pos[label] / recall_sum
         else:
             recall[label] = 0.0
-    result = {"precision": precision, "recall": recall}
+        acc_label[label] = correct_label[label] / float(total_label[label])
+    result = {"precision": precision, "recall": recall, "accuracy": acc_label}
     return result
 # In[7]:
 
